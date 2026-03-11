@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier' if support else 'Nouveau support' }} — Médiathèque{% endblock %}
+
+{% block content %}
+<h1>{{ 'Modifier le support' if support else 'Ajouter un support' }}</h1>
+
+<form method="post" enctype="multipart/form-data" class="formulaire">
+
+  <fieldset>
+    <legend>Informations générales</legend>
+
+    <div class="form-group">
+      <label for="titre">Titre <span class="requis">*</span></label>
+      <input type="text" id="titre" name="titre" required
+             value="{{ support.titre if support else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="type_support">Type <span class="requis">*</span></label>
+      <select id="type_support" name="type_support" required>
+        <option value="audio" {{ 'selected' if support and support.type_support == 'audio' }}>Audio</option>
+        <option value="video" {{ 'selected' if support and support.type_support == 'video' }}>Vidéo</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="support">Support physique <span class="requis">*</span></label>
+      <input type="text" id="support" name="support" required placeholder="CD, DVD, Blu-ray, Vinyle…"
+             value="{{ support.support if support else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="genre">Genre</label>
+      <input type="text" id="genre" name="genre" placeholder="Rock, Jazz, Action, Comédie…"
+             value="{{ support.genre or '' }}">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_sortie">Année de sortie</label>
+        <input type="number" id="date_sortie" name="date_sortie" min="1900" max="2100"
+               value="{{ support.date_sortie or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="duree">Durée (min)</label>
+        <input type="number" id="duree" name="duree" min="1"
+               value="{{ support.duree or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="langue">Langue</label>
+        <input type="text" id="langue" name="langue"
+               value="{{ support.langue or '' }}">
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset id="champs-audio">
+    <legend>Informations audio</legend>
+    <div class="form-group">
+      <label for="interprete">Groupe / Interprète</label>
+      <input type="text" id="interprete" name="interprete"
+             value="{{ support.interprete or '' }}">
+    </div>
+  </fieldset>
+
+  <fieldset id="champs-video">
+    <legend>Informations vidéo</legend>
+    <div class="form-group">
+      <label for="realisateur">Réalisateur</label>
+      <input type="text" id="realisateur" name="realisateur"
+             value="{{ support.realisateur or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="acteurs">Acteurs principaux</label>
+      <input type="text" id="acteurs" name="acteurs" placeholder="Noms séparés par des virgules"
+             value="{{ support.acteurs or '' }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Pochette</legend>
+    <div class="form-group">
+      <label for="pochette">Image de pochette</label>
+      {% if support and support.pochette %}
+        <img src="{{ url_for('static', filename='uploads/' + support.pochette) }}"
+             alt="Pochette actuelle" class="pochette-mini">
+      {% endif %}
+      <input type="file" id="pochette" name="pochette" accept="image/*">
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      {{ 'Enregistrer les modifications' if support else 'Ajouter le support' }}
+    </button>
+    <a href="{{ url_for('supports.liste') }}" class="btn">Annuler</a>
+  </div>
+</form>
+
+<script>
+  // Affiche/masque les sections audio/vidéo selon le type sélectionné
+  const select = document.getElementById('type_support');
+  function majChamps() {
+    document.getElementById('champs-audio').style.display =
+      select.value === 'audio' ? '' : 'none';
+    document.getElementById('champs-video').style.display =
+      select.value === 'video' ? '' : 'none';
+  }
+  select.addEventListener('change', majChamps);
+  majChamps();
+</script>
+{% endblock %}

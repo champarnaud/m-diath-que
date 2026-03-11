@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ support.titre }} — Médiathèque{% endblock %}
+
+{% block content %}
+<div class="fiche">
+  <div class="fiche-pochette">
+    {% if support.pochette %}
+      <img src="{{ url_for('static', filename='uploads/' + support.pochette) }}" alt="Pochette {{ support.titre }}">
+    {% else %}
+      <div class="pochette-placeholder-large">{{ '🎵' if support.type_support == 'audio' else '🎬' }}</div>
+    {% endif %}
+  </div>
+
+  <div class="fiche-infos">
+    <h1>{{ support.titre }}</h1>
+    <span class="badge badge-{{ support.type_support }}">{{ support.type_support|capitalize }}</span>
+    <span class="badge">{{ support.support }}</span>
+
+    <dl class="fiche-details">
+      {% if support.genre %}
+        <dt>Genre</dt><dd>{{ support.genre }}</dd>
+      {% endif %}
+      {% if support.date_sortie %}
+        <dt>Année</dt><dd>{{ support.date_sortie }}</dd>
+      {% endif %}
+      {% if support.duree %}
+        <dt>Durée</dt><dd>{{ support.duree }} min</dd>
+      {% endif %}
+      {% if support.langue %}
+        <dt>Langue</dt><dd>{{ support.langue }}</dd>
+      {% endif %}
+      {% if support.interprete %}
+        <dt>Interprète</dt><dd>{{ support.interprete }}</dd>
+      {% endif %}
+      {% if support.realisateur %}
+        <dt>Réalisateur</dt><dd>{{ support.realisateur }}</dd>
+      {% endif %}
+      {% if support.acteurs %}
+        <dt>Acteurs</dt><dd>{{ support.acteurs }}</dd>
+      {% endif %}
+    </dl>
+
+    <div class="fiche-actions">
+      <a href="{{ url_for('supports.modifier', support_id=support.id) }}" class="btn btn-primary">✏️ Modifier</a>
+      <form method="post" action="{{ url_for('supports.supprimer', support_id=support.id) }}" style="display:inline"
+            onsubmit="return confirm('Supprimer ce support ?')">
+        <button type="submit" class="btn btn-danger">🗑 Supprimer</button>
+      </form>
+      <a href="{{ url_for('supports.liste') }}" class="btn">← Retour</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Médiathèque{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="{{ url_for('index') }}" class="nav-brand">Médiathèque</a>
+      <div class="nav-links">
+        <a href="{{ url_for('supports.liste') }}">Tous les supports</a>
+        <a href="{{ url_for('supports.liste') }}?type=audio">Audio</a>
+        <a href="{{ url_for('supports.liste') }}?type=video">Vidéo</a>
+        <a href="{{ url_for('supports.nouveau') }}">+ Ajouter</a>
+      </div>
+      <form class="nav-search" action="{{ url_for('recherche.rechercher') }}" method="get">
+        <input type="search" name="q" placeholder="Rechercher…" value="{{ request.args.get('q', '') }}">
+        <button type="submit">🔍</button>
+      </form>
+    </nav>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Médiathèque — Application personnelle de gestion de supports audiovisuels</p>
+  </footer>
+</body>
+</html>

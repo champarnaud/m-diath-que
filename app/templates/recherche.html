@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Recherche{% if terme %} : {{ terme }}{% endif %} — Médiathèque{% endblock %}
+
+{% block content %}
+<h1>Résultats de recherche{% if terme %} pour « {{ terme }} »{% endif %}</h1>
+
+{% if terme %}
+  {% if resultats %}
+    <p>{{ resultats|length }} résultat{{ 's' if resultats|length > 1 }} trouvé{{ 's' if resultats|length > 1 }}.</p>
+    <ul class="resultats-liste">
+      {% for s in resultats %}
+      <li class="resultat-item">
+        <a href="{{ url_for('supports.detail', support_id=s.id) }}">
+          <span class="badge badge-{{ s.type_support }}">{{ s.type_support|capitalize }}</span>
+          <strong>{{ s.titre }}</strong>
+          {% if s.interprete %}<span class="soustitre">— {{ s.interprete }}</span>{% endif %}
+          {% if s.realisateur %}<span class="soustitre">— {{ s.realisateur }}</span>{% endif %}
+          {% if s.date_sortie %}<span class="annee">({{ s.date_sortie }})</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="vide">Aucun résultat pour « {{ terme }} ».</p>
+  {% endif %}
+{% else %}
+  <p>Entrez un terme dans la barre de recherche pour commencer.</p>
+{% endif %}
+{% endblock %}

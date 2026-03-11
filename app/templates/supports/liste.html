@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Collection — Médiathèque{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    {% if type_filtre == 'audio' %}Supports Audio
+    {% elif type_filtre == 'video' %}Supports Vidéo
+    {% else %}Toute la collection
+    {% endif %}
+  </h1>
+  <a href="{{ url_for('supports.nouveau') }}" class="btn btn-primary">+ Ajouter</a>
+</div>
+
+<div class="filtres">
+  <div class="filtres-type">
+    <a href="{{ url_for('supports.liste') }}" class="btn {{ 'btn-active' if not type_filtre }}">Tous</a>
+    <a href="{{ url_for('supports.liste') }}?type=audio" class="btn {{ 'btn-active' if type_filtre == 'audio' }}">Audio</a>
+    <a href="{{ url_for('supports.liste') }}?type=video" class="btn {{ 'btn-active' if type_filtre == 'video' }}">Vidéo</a>
+  </div>
+  <div class="filtres-tri">
+    <span>Trier par :</span>
+    {% set base = url_for('supports.liste') + ('?type=' + type_filtre if type_filtre else '?') %}
+    <a href="{{ base }}&tri=titre" class="{{ 'actif' if tri == 'titre' }}">Titre</a>
+    <a href="{{ base }}&tri=interprete" class="{{ 'actif' if tri == 'interprete' }}">Interprète</a>
+    <a href="{{ base }}&tri=realisateur" class="{{ 'actif' if tri == 'realisateur' }}">Réalisateur</a>
+    <a href="{{ base }}&tri=date_sortie" class="{{ 'actif' if tri == 'date_sortie' }}">Année</a>
+    <a href="{{ base }}&tri=genre" class="{{ 'actif' if tri == 'genre' }}">Genre</a>
+  </div>
+</div>
+
+{% if supports %}
+<table class="supports-table">
+  <thead>
+    <tr>
+      <th>Pochette</th>
+      <th>Titre</th>
+      <th>Type</th>
+      <th>Support</th>
+      <th>Genre</th>
+      <th>Artiste / Réalisateur</th>
+      <th>Année</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in supports %}
+    <tr>
+      <td class="pochette-cell">
+        {% if s.pochette %}
+          <img src="{{ url_for('static', filename='uploads/' + s.pochette) }}" alt="Pochette {{ s.titre }}" class="pochette-mini">
+        {% else %}
+          <div class="pochette-placeholder">{{ '🎵' if s.type_support == 'audio' else '🎬' }}</div>
+        {% endif %}
+      </td>
+      <td><a href="{{ url_for('supports.detail', support_id=s.id) }}">{{ s.titre }}</a></td>
+      <td><span class="badge badge-{{ s.type_support }}">{{ s.type_support|capitalize }}</span></td>
+      <td>{{ s.support }}</td>
+      <td>{{ s.genre or '—' }}</td>
+      <td>{{ s.interprete or s.realisateur or '—' }}</td>
+      <td>{{ s.date_sortie or '—' }}</td>
+      <td class="actions-cell">
+        <a href="{{ url_for('supports.modifier', support_id=s.id) }}" class="btn btn-sm">✏️</a>
+        <form method="post" action="{{ url_for('supports.supprimer', support_id=s.id) }}" style="display:inline"
+              onsubmit="return confirm('Supprimer ce support ?')">
+          <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="vide">Aucun support dans cette catégorie.</p>
+{% endif %}
+{% endblock %}

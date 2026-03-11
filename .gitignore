@@ -1,0 +1,6 @@
+.venv/
+instance/
+app/static/uploads/
+__pycache__/
+*.pyc
+*.db
