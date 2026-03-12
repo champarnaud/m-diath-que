@@ -67,13 +67,14 @@
     <legend>Informations audio</legend>
     <div class="form-group">
       <label for="interprete_ids">Groupe / Interprète</label>
-      {% set ids_interprete = support.personnes | selectattr('role', 'equalto', 'interprete') | map(attribute='id') | list if support else [] %}
       <select id="interprete_ids" name="interprete_ids" multiple size="5">
-        {% for p in personnes %}
+        {% for p in interpretes %}
           <option value="{{ p.id }}"
-                  {{ 'selected' if p.id in ids_interprete }}>
-            {{ p.nom }}
+                  {{ 'selected' if p.id in ids_interpretes }}>
+            {{ p.nom }} ({{ p.activites | map(attribute='libelle') | join(', ') }})
           </option>
+        {% else %}
+          <option disabled>Aucune personne avec activité interprète/musicien</option>
         {% endfor %}
       </select>
       <p class="form-hint">
@@ -87,25 +88,27 @@
     <legend>Informations vidéo</legend>
     <div class="form-group">
       <label for="realisateur_ids">Réalisateur(s)</label>
-      {% set ids_real = support.personnes | selectattr('role', 'equalto', 'realisateur') | map(attribute='id') | list if support else [] %}
       <select id="realisateur_ids" name="realisateur_ids" multiple size="4">
-        {% for p in personnes %}
+        {% for p in realisateurs %}
           <option value="{{ p.id }}"
-                  {{ 'selected' if p.id in ids_real }}>
-            {{ p.nom }}
+                  {{ 'selected' if p.id in ids_realisateurs }}>
+            {{ p.nom }} ({{ p.activites | map(attribute='libelle') | join(', ') }})
           </option>
+        {% else %}
+          <option disabled>Aucune personne avec activité réalisateur</option>
         {% endfor %}
       </select>
     </div>
     <div class="form-group">
       <label for="acteur_ids">Acteurs principaux</label>
-      {% set ids_acteur = support.personnes | selectattr('role', 'equalto', 'acteur') | map(attribute='id') | list if support else [] %}
       <select id="acteur_ids" name="acteur_ids" multiple size="6">
-        {% for p in personnes %}
+        {% for p in acteurs %}
           <option value="{{ p.id }}"
-                  {{ 'selected' if p.id in ids_acteur }}>
-            {{ p.nom }}
+                  {{ 'selected' if p.id in ids_acteurs }}>
+            {{ p.nom }} ({{ p.activites | map(attribute='libelle') | join(', ') }})
           </option>
+        {% else %}
+          <option disabled>Aucune personne avec activité acteur/comédien</option>
         {% endfor %}
       </select>
       <p class="form-hint">

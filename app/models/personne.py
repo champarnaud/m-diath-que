@@ -293,8 +293,7 @@ class Personne:
         """
         Retourne toutes les personnes triées alphabétiquement par nom.
 
-        N'inclut pas les activités (performances) ; appeler
-        charger_activites() si besoin.
+        N'inclut pas les activités ; appeler charger_activites() si besoin.
 
         Args:
             db: Connexion SQLite active.
@@ -306,6 +305,106 @@ class Personne:
             "SELECT * FROM personne ORDER BY nom COLLATE NOCASE"
         ).fetchall()
         return [cls._depuis_row(r) for r in rows]
+
+    @classmethod
+    def lister_avec_activites(cls, db: sqlite3.Connection) -> List["Personne"]:
+        """
+        Retourne toutes les personnes avec leurs activités pré-chargées.
+
+        Effectue un chargement grouper des activités pour éviter les
+        requêtes N+1.
+
+        Args:
+            db: Connexion SQLite active.
+
+        Returns:
+            List[Personne]: Personnes avec self.activites renseigné.
+        """
+        personnes = cls.lister_toutes(db)
+        if not personnes:
+            return personnes
+        ids = [p.id for p in personnes]
+        placeholders = ",".join("?" * len(ids))
+        act_rows = db.execute(
+            f"""
+            SELECT pa.personne_id, a.id AS activite_id, a.libelle
+            FROM activite a
+            JOIN personne_activite pa ON pa.activite_id = a.id
+            WHERE pa.personne_id IN ({placeholders})
+            ORDER BY a.libelle COLLATE NOCASE
+            """,
+            ids,
+        ).fetchall()
+        acts_par_personne: dict = {}
+        for row in act_rows:
+            pid = row["personne_id"]
+            acts_par_personne.setdefault(pid, []).append(
+                Activite(id=row["activite_id"], libelle=row["libelle"])
+            )
+        for p in personnes:
+            p.activites = acts_par_personne.get(p.id, [])
+        return personnes
+
+    @classmethod
+    def lister_pour_role(
+        cls,
+        db: sqlite3.Connection,
+        mots_cles: List[str],
+    ) -> List["Personne"]:
+        """
+        Retourne les personnes dont au moins une activité contient
+        l'un des mots-clés donnés (recherche insensible à la casse).
+
+        Utilisé pour pré-filtrer les selects du formulaire support
+        selon le rôle (acteur, réalisateur, interprète…).
+
+        Args:
+            db:        Connexion SQLite active.
+            mots_cles: Sous-chaînes à chercher dans le libellé.
+
+        Returns:
+            List[Personne]: Personnes correspondantes avec activités
+                            chargées.
+        """
+        conditions = " OR ".join(
+            ["a.libelle LIKE ? COLLATE NOCASE"] * len(mots_cles)
+        )
+        params = [f"%{mot}%" for mot in mots_cles]
+        rows = db.execute(
+            f"""
+            SELECT DISTINCT p.*
+            FROM personne p
+            JOIN personne_activite pa ON pa.personne_id = p.id
+            JOIN activite a ON a.id = pa.activite_id
+            WHERE {conditions}
+            ORDER BY p.nom COLLATE NOCASE
+            """,
+            params,
+        ).fetchall()
+        personnes = [cls._depuis_row(r) for r in rows]
+        if not personnes:
+            return personnes
+        ids = [p.id for p in personnes]
+        placeholders = ",".join("?" * len(ids))
+        act_rows = db.execute(
+            f"""
+            SELECT pa.personne_id, a.id AS activite_id, a.libelle
+            FROM activite a
+            JOIN personne_activite pa ON pa.activite_id = a.id
+            WHERE pa.personne_id IN ({placeholders})
+            ORDER BY a.libelle COLLATE NOCASE
+            """,
+            ids,
+        ).fetchall()
+        acts_par_personne: dict = {}
+        for row in act_rows:
+            pid = row["personne_id"]
+            acts_par_personne.setdefault(pid, []).append(
+                Activite(id=row["activite_id"], libelle=row["libelle"])
+            )
+        for p in personnes:
+            p.activites = acts_par_personne.get(p.id, [])
+        return personnes
 
     @classmethod
     def supprimer(cls, db: sqlite3.Connection, personne_id: int) -> None:

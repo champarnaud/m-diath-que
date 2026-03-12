@@ -26,6 +26,18 @@ bp = Blueprint("supports", __name__, url_prefix="/supports")
 
 EXTENSIONS_AUTORISEES = {"png", "jpg", "jpeg", "gif", "webp"}
 
+_MOTS_CLES_INTERPRETE = ["interpr", "chanteur", "chanteuse", "musicien", "groupe", "artiste", "band"]
+_MOTS_CLES_REALISATEUR = ["réalisateur", "realisateur", "metteur", "director"]
+_MOTS_CLES_ACTEUR = ["acteur", "actrice", "comédien", "comedien"]
+
+
+def _listes_personnes_formulaire(db):
+    return (
+        Personne.lister_pour_role(db, _MOTS_CLES_INTERPRETE),
+        Personne.lister_pour_role(db, _MOTS_CLES_REALISATEUR),
+        Personne.lister_pour_role(db, _MOTS_CLES_ACTEUR),
+    )
+
 
 def _extension_autorisee(nom_fichier: str) -> bool:
     """Vérifie que l'extension du fichier est dans la liste autorisée."""
@@ -102,19 +114,33 @@ def detail(support_id: int) -> str:
 def nouveau() -> Union[str, Response]:
     """Affiche et traite le formulaire d'ajout d'un support."""
     db = get_db()
-    personnes = Personne.lister_toutes(db)
+    interpretes, realisateurs, acteurs = _listes_personnes_formulaire(db)
     if request.method == "POST":
         erreur = _traiter_formulaire(support_id=None)
         if erreur:
             flash(erreur, "danger")
             return render_template(
-                "supports/formulaire.html", support=None, personnes=personnes
+                "supports/formulaire.html",
+                support=None,
+                interpretes=interpretes,
+                realisateurs=realisateurs,
+                acteurs=acteurs,
+                ids_interpretes=[],
+                ids_realisateurs=[],
+                ids_acteurs=[],
             )
         flash("Support ajouté avec succès.", "success")
         return redirect(url_for("supports.liste"))
 
     return render_template(
-        "supports/formulaire.html", support=None, personnes=personnes
+        "supports/formulaire.html",
+        support=None,
+        interpretes=interpretes,
+        realisateurs=realisateurs,
+        acteurs=acteurs,
+        ids_interpretes=[],
+        ids_realisateurs=[],
+        ids_acteurs=[],
     )
 
 
@@ -125,7 +151,16 @@ def modifier(support_id: int) -> Union[str, Response]:
     support = Support.trouver_par_id(db, support_id)
     if support is None:
         abort(404)
-    personnes = Personne.lister_toutes(db)
+    interpretes, realisateurs, acteurs = _listes_personnes_formulaire(db)
+    ids_interpretes = [
+        p["id"] for p in support.personnes if p["role"] == "interprete"
+    ]
+    ids_realisateurs = [
+        p["id"] for p in support.personnes if p["role"] == "realisateur"
+    ]
+    ids_acteurs = [
+        p["id"] for p in support.personnes if p["role"] == "acteur"
+    ]
 
     if request.method == "POST":
         erreur = _traiter_formulaire(support_id=support_id)
@@ -134,13 +169,25 @@ def modifier(support_id: int) -> Union[str, Response]:
             return render_template(
                 "supports/formulaire.html",
                 support=support,
-                personnes=personnes,
+                interpretes=interpretes,
+                realisateurs=realisateurs,
+                acteurs=acteurs,
+                ids_interpretes=ids_interpretes,
+                ids_realisateurs=ids_realisateurs,
+                ids_acteurs=ids_acteurs,
             )
         flash("Support modifié avec succès.", "success")
         return redirect(url_for("supports.detail", support_id=support_id))
 
     return render_template(
-        "supports/formulaire.html", support=support, personnes=personnes
+        "supports/formulaire.html",
+        support=support,
+        interpretes=interpretes,
+        realisateurs=realisateurs,
+        acteurs=acteurs,
+        ids_interpretes=ids_interpretes,
+        ids_realisateurs=ids_realisateurs,
+        ids_acteurs=ids_acteurs,
     )
 
 
