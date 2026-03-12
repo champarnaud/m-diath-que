@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ personne.nom }} — Médiathèque{% endblock %}
+
+{% block content %}
+<div class="fiche">
+  <div class="fiche-infos">
+    <h1>{{ personne.nom }}</h1>
+
+    <dl class="fiche-details">
+      {% if personne.date_naissance %}
+        <dt>Naissance</dt><dd>{{ personne.date_naissance }}</dd>
+      {% endif %}
+      {% if personne.date_deces %}
+        <dt>Décès</dt><dd>{{ personne.date_deces }}</dd>
+      {% endif %}
+      {% if personne.activites %}
+        <dt>Activités</dt>
+        <dd>
+          {% for a in personne.activites %}
+            <span class="badge">{{ a.libelle }}</span>
+          {% endfor %}
+        </dd>
+      {% endif %}
+    </dl>
+
+    {% if supports_lies %}
+      <h2>Supports associés</h2>
+      <table class="table">
+        <thead>
+          <tr><th>Titre</th><th>Type</th><th>Support</th><th>Rôle</th></tr>
+        </thead>
+        <tbody>
+          {% for s in supports_lies %}
+            <tr>
+              <td>
+                <a href="{{ url_for('supports.detail', support_id=s.id) }}">
+                  {{ s.titre }}
+                </a>
+              </td>
+              <td>{{ s.type_support|capitalize }}</td>
+              <td>{{ s.support }}</td>
+              <td>{{ s.role|capitalize }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <div class="fiche-actions">
+      <a href="{{ url_for('personnes.modifier', personne_id=personne.id) }}"
+         class="btn btn-primary">✏️ Modifier</a>
+      <form method="post"
+            action="{{ url_for('personnes.supprimer', personne_id=personne.id) }}"
+            style="display:inline"
+            onsubmit="return confirm('Supprimer cette personne ?')">
+        <button type="submit" class="btn btn-danger">🗑 Supprimer</button>
+      </form>
+      <a href="{{ url_for('personnes.liste') }}" class="btn">← Retour</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -48,8 +48,10 @@ def create_app(config_overrides: Optional[Dict[str, Any]] = None) -> Flask:
     # Blueprints
     from app.routes.supports import bp as supports_bp
     from app.routes.recherche import bp as recherche_bp
+    from app.routes.personnes import bp as personnes_bp
     app.register_blueprint(supports_bp)
     app.register_blueprint(recherche_bp)
+    app.register_blueprint(personnes_bp)
 
     # Page d'accueil
     @app.route("/")

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Activités — Médiathèque{% endblock %}
+
+{% block content %}
+<div class="liste-header">
+  <h1>Activités</h1>
+  <a href="{{ url_for('personnes.nouvelle_activite') }}" class="btn btn-primary">+ Nouvelle activité</a>
+</div>
+
+{% if activites %}
+  <table class="table">
+    <thead>
+      <tr><th>Libellé</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for activite in activites %}
+        <tr>
+          <td>{{ activite.libelle }}</td>
+          <td class="actions">
+            <form method="post"
+                  action="{{ url_for('personnes.supprimer_activite', activite_id=activite.id) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('Supprimer « {{ activite.libelle }} » ?')">
+              <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>Aucune activité enregistrée.</p>
+{% endif %}
+
+<p><a href="{{ url_for('personnes.liste') }}" class="btn">← Retour aux personnes</a></p>
+{% endblock %}

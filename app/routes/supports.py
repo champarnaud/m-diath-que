@@ -8,6 +8,7 @@ from typing import Union
 from flask import (
     Blueprint,
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -18,6 +19,7 @@ from werkzeug.utils import secure_filename
 from werkzeug import Response
 
 from app.models.db import get_db
+from app.models.personne import Personne
 from app.models.support import Support
 
 bp = Blueprint("supports", __name__, url_prefix="/supports")
@@ -33,23 +35,56 @@ def _extension_autorisee(nom_fichier: str) -> bool:
     )
 
 
+PAR_PAGE_VALIDES = (10, 50, 100)
+
+
 @bp.route("/")
 def liste() -> str:
-    """Affiche la liste de tous les supports, avec filtre et tri optionnels."""
+    """Affiche la liste de tous les supports, avec filtre, tri et pagination."""
     db = get_db()
     type_filtre = request.args.get("type", "")
     tri = request.args.get("tri", "titre")
 
+    try:
+        par_page = int(request.args.get("par_page", 10))
+    except ValueError:
+        par_page = 10
+    if par_page not in PAR_PAGE_VALIDES:
+        par_page = 10
+
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+
+    offset = (page - 1) * par_page
+
     if type_filtre in ("audio", "video"):
-        supports = Support.lister_par_type(db, type_filtre, tri=tri)
+        total = Support.compter_par_type(db, type_filtre)
+        supports = Support.lister_par_type(
+            db, type_filtre, tri=tri, limite=par_page, offset=offset
+        )
     else:
-        supports = Support.lister_tous(db, tri=tri)
+        total = Support.compter_tous(db)
+        supports = Support.lister_tous(
+            db, tri=tri, limite=par_page, offset=offset
+        )
+
+    nb_pages = max(1, (total + par_page - 1) // par_page)
+    page = min(page, nb_pages)
+
+    for s in supports:
+        s.charger_personnes(db)
 
     return render_template(
         "supports/liste.html",
         supports=supports,
         type_filtre=type_filtre,
         tri=tri,
+        par_page=par_page,
+        page=page,
+        nb_pages=nb_pages,
+        total=total,
     )
 
 
@@ -66,15 +101,21 @@ def detail(support_id: int) -> str:
 @bp.route("/nouveau", methods=["GET", "POST"])
 def nouveau() -> Union[str, Response]:
     """Affiche et traite le formulaire d'ajout d'un support."""
+    db = get_db()
+    personnes = Personne.lister_toutes(db)
     if request.method == "POST":
         erreur = _traiter_formulaire(support_id=None)
         if erreur:
             flash(erreur, "danger")
-            return render_template("supports/formulaire.html", support=None)
+            return render_template(
+                "supports/formulaire.html", support=None, personnes=personnes
+            )
         flash("Support ajouté avec succès.", "success")
         return redirect(url_for("supports.liste"))
 
-    return render_template("supports/formulaire.html", support=None)
+    return render_template(
+        "supports/formulaire.html", support=None, personnes=personnes
+    )
 
 
 @bp.route("/<int:support_id>/modifier", methods=["GET", "POST"])
@@ -84,16 +125,23 @@ def modifier(support_id: int) -> Union[str, Response]:
     support = Support.trouver_par_id(db, support_id)
     if support is None:
         abort(404)
+    personnes = Personne.lister_toutes(db)
 
     if request.method == "POST":
         erreur = _traiter_formulaire(support_id=support_id)
         if erreur:
             flash(erreur, "danger")
-            return render_template("supports/formulaire.html", support=support)
+            return render_template(
+                "supports/formulaire.html",
+                support=support,
+                personnes=personnes,
+            )
         flash("Support modifié avec succès.", "success")
         return redirect(url_for("supports.detail", support_id=support_id))
 
-    return render_template("supports/formulaire.html", support=support)
+    return render_template(
+        "supports/formulaire.html", support=support, personnes=personnes
+    )
 
 
 @bp.route("/<int:support_id>/supprimer", methods=["POST"])
@@ -122,8 +170,6 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
     Returns:
         str avec message d'erreur, ou None si succès.
     """
-    from flask import current_app
-
     titre = request.form.get("titre", "").strip()
     type_support = request.form.get("type_support", "").strip()
     support_physique = request.form.get("support", "").strip()
@@ -135,12 +181,17 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
             type_support=type_support,
             support=support_physique,
             genre=request.form.get("genre") or None,
-            date_sortie=int(request.form["date_sortie"]) if request.form.get("date_sortie") else None,
-            duree=int(request.form["duree"]) if request.form.get("duree") else None,
+            date_sortie=(
+                int(request.form["date_sortie"])
+                if request.form.get("date_sortie")
+                else None
+            ),
+            duree=(
+                int(request.form["duree"])
+                if request.form.get("duree")
+                else None
+            ),
             langue=request.form.get("langue") or None,
-            interprete=request.form.get("interprete") or None,
-            realisateur=request.form.get("realisateur") or None,
-            acteurs=request.form.get("acteurs") or None,
         )
     except ValueError as exc:
         return str(exc)
@@ -159,4 +210,14 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
 
     db = get_db()
     support.sauvegarder(db)
+
+    # Associations personnes : on repart de zéro puis on réinsère
+    support.retirer_toutes_personnes(db)
+    for role in ("realisateur", "acteur", "interprete"):
+        for pid in request.form.getlist(f"{role}_ids"):
+            try:
+                support.associer_personne(db, int(pid), role)
+            except (ValueError, TypeError):
+                pass
+
     return None

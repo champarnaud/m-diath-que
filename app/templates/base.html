@@ -14,6 +14,7 @@
         <a href="{{ url_for('supports.liste') }}">Tous les supports</a>
         <a href="{{ url_for('supports.liste') }}?type=audio">Audio</a>
         <a href="{{ url_for('supports.liste') }}?type=video">Vidéo</a>
+        <a href="{{ url_for('personnes.liste') }}">Personnes</a>
         <a href="{{ url_for('supports.nouveau') }}">+ Ajouter</a>
       </div>
       <form class="nav-search" action="{{ url_for('recherche.rechercher') }}" method="get">

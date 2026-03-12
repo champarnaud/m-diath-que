@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier' if personne else 'Nouvelle personne' }} — Médiathèque{% endblock %}
+
+{% block content %}
+<h1>{{ 'Modifier la personne' if personne else 'Ajouter une personne' }}</h1>
+
+<form method="post" class="formulaire">
+
+  <fieldset>
+    <legend>Identité</legend>
+
+    <div class="form-group">
+      <label for="nom">Nom <span class="requis">*</span></label>
+      <input type="text" id="nom" name="nom" required
+             value="{{ personne.nom if personne else '' }}">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="date_naissance">Date de naissance</label>
+        <input type="text" id="date_naissance" name="date_naissance"
+               placeholder="ex : 1946-09-18"
+               value="{{ personne.date_naissance or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="date_deces">Date de décès</label>
+        <input type="text" id="date_deces" name="date_deces"
+               placeholder="ex : 2016-01-10"
+               value="{{ personne.date_deces or '' }}">
+      </div>
+    </div>
+  </fieldset>
+
+  {% if activites_dispo %}
+    <fieldset>
+      <legend>Activités</legend>
+      <div class="form-group checkboxes">
+        {% set activites_personne = personne.activites | map(attribute='id') | list if personne else [] %}
+        {% for activite in activites_dispo %}
+          <label class="checkbox-label">
+            <input type="checkbox" name="activite_ids" value="{{ activite.id }}"
+                   {{ 'checked' if activite.id in activites_personne }}>
+            {{ activite.libelle }}
+          </label>
+        {% endfor %}
+      </div>
+      <p><a href="{{ url_for('personnes.liste_activites') }}">Gérer les activités →</a></p>
+    </fieldset>
+  {% else %}
+    <p>
+      Aucune activité disponible.
+      <a href="{{ url_for('personnes.liste_activites') }}">En ajouter une ?</a>
+    </p>
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      {{ 'Enregistrer les modifications' if personne else 'Ajouter la personne' }}
+    </button>
+    <a href="{{ url_for('personnes.liste') }}" class="btn">Annuler</a>
+  </div>
+</form>
+{% endblock %}

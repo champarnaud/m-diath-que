@@ -66,23 +66,52 @@
   <fieldset id="champs-audio">
     <legend>Informations audio</legend>
     <div class="form-group">
-      <label for="interprete">Groupe / Interprète</label>
-      <input type="text" id="interprete" name="interprete"
-             value="{{ support.interprete or '' }}">
+      <label for="interprete_ids">Groupe / Interprète</label>
+      {% set ids_interprete = support.personnes | selectattr('role', 'equalto', 'interprete') | map(attribute='id') | list if support else [] %}
+      <select id="interprete_ids" name="interprete_ids" multiple size="5">
+        {% for p in personnes %}
+          <option value="{{ p.id }}"
+                  {{ 'selected' if p.id in ids_interprete }}>
+            {{ p.nom }}
+          </option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">
+        Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
+        <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
+      </p>
     </div>
   </fieldset>
 
   <fieldset id="champs-video">
     <legend>Informations vidéo</legend>
     <div class="form-group">
-      <label for="realisateur">Réalisateur</label>
-      <input type="text" id="realisateur" name="realisateur"
-             value="{{ support.realisateur or '' }}">
+      <label for="realisateur_ids">Réalisateur(s)</label>
+      {% set ids_real = support.personnes | selectattr('role', 'equalto', 'realisateur') | map(attribute='id') | list if support else [] %}
+      <select id="realisateur_ids" name="realisateur_ids" multiple size="4">
+        {% for p in personnes %}
+          <option value="{{ p.id }}"
+                  {{ 'selected' if p.id in ids_real }}>
+            {{ p.nom }}
+          </option>
+        {% endfor %}
+      </select>
     </div>
     <div class="form-group">
-      <label for="acteurs">Acteurs principaux</label>
-      <input type="text" id="acteurs" name="acteurs" placeholder="Noms séparés par des virgules"
-             value="{{ support.acteurs or '' }}">
+      <label for="acteur_ids">Acteurs principaux</label>
+      {% set ids_acteur = support.personnes | selectattr('role', 'equalto', 'acteur') | map(attribute='id') | list if support else [] %}
+      <select id="acteur_ids" name="acteur_ids" multiple size="6">
+        {% for p in personnes %}
+          <option value="{{ p.id }}"
+                  {{ 'selected' if p.id in ids_acteur }}>
+            {{ p.nom }}
+          </option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">
+        Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
+        <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
+      </p>
     </div>
   </fieldset>
 

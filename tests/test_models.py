@@ -46,14 +46,12 @@ class TestSupportCreation:
             date_sortie=1973,
             duree=43,
             langue="Anglais",
-            interprete="Pink Floyd",
         )
         support_id = support.sauvegarder(db)
 
         assert support_id is not None
         resultat = Support.trouver_par_id(db, support_id)
         assert resultat.titre == "Dark Side of the Moon"
-        assert resultat.interprete == "Pink Floyd"
         assert resultat.type_support == "audio"
 
     def test_creer_support_video(self, db):
@@ -68,15 +66,12 @@ class TestSupportCreation:
             date_sortie=1982,
             duree=117,
             langue="Anglais",
-            realisateur="Ridley Scott",
-            acteurs="Harrison Ford, Rutger Hauer",
         )
         support_id = support.sauvegarder(db)
 
         assert support_id is not None
         resultat = Support.trouver_par_id(db, support_id)
         assert resultat.titre == "Blade Runner"
-        assert resultat.realisateur == "Ridley Scott"
         assert resultat.type_support == "video"
 
     def test_titre_obligatoire(self, db):
@@ -158,23 +153,30 @@ class TestSupportRecherche:
         """La recherche trouve un support par son titre (insensible à la casse)."""
         from app.models.support import Support
 
-        Support(titre="Thriller", type_support="audio", support="CD", interprete="Michael Jackson").sauvegarder(db)
-        Support(titre="Bad", type_support="audio", support="CD", interprete="Michael Jackson").sauvegarder(db)
+        Support(titre="Thriller", type_support="audio", support="CD").sauvegarder(db)
+        Support(titre="Bad", type_support="audio", support="CD").sauvegarder(db)
 
         resultats = Support.rechercher(db, "thriller")
         assert len(resultats) == 1
         assert resultats[0].titre == "Thriller"
 
-    def test_recherche_par_interprete(self, db):
-        """La recherche trouve les supports d'un interprète."""
+    def test_recherche_par_nom_personne(self, db):
+        """La recherche trouve les supports associés à une personne."""
+        from app.models.personne import Personne
         from app.models.support import Support
 
-        Support(titre="Thriller", type_support="audio", support="CD", interprete="Michael Jackson").sauvegarder(db)
-        Support(titre="Nevermind", type_support="audio", support="CD", interprete="Nirvana").sauvegarder(db)
+        s1 = Support(titre="Thriller", type_support="audio", support="CD")
+        s1.sauvegarder(db)
+        s2 = Support(titre="Nevermind", type_support="audio", support="CD")
+        s2.sauvegarder(db)
+
+        artiste = Personne(nom="Michael Jackson")
+        artiste.sauvegarder(db)
+        s1.associer_personne(db, artiste.id, "interprete")
 
         resultats = Support.rechercher(db, "michael jackson")
         assert len(resultats) == 1
-        assert resultats[0].interprete == "Michael Jackson"
+        assert resultats[0].titre == "Thriller"
 
     def test_recherche_sans_resultat(self, db):
         """Une recherche sans correspondance retourne une liste vide."""
@@ -219,6 +221,136 @@ class TestSupportModification:
         Support.supprimer(db, support_id)
 
         assert Support.trouver_par_id(db, support_id) is None
+
+
+# ---------------------------------------------------------------------------
+# Personne et Activite
+# ---------------------------------------------------------------------------
+
+
+class TestActivite:
+    """Tests du modèle Activite."""
+
+    def test_creer_activite(self, db):
+        """Une activité peut être créée et retrouvée par son id."""
+        from app.models.personne import Activite
+
+        activite_id = Activite(libelle="Réalisateur").sauvegarder(db)
+        result = Activite.trouver_par_id(db, activite_id)
+        assert result.libelle == "Réalisateur"
+
+    def test_libelle_obligatoire(self, db):
+        """La création d'une activité sans libellé lève une ValueError."""
+        from app.models.personne import Activite
+
+        with pytest.raises(ValueError, match="libelle"):
+            Activite(libelle="")
+
+    def test_lister_toutes_les_activites(self, db):
+        """La liste retourne toutes les activités triées."""
+        from app.models.personne import Activite
+
+        Activite(libelle="Chanteur").sauvegarder(db)
+        Activite(libelle="Acteur").sauvegarder(db)
+
+        activites = Activite.lister_toutes(db)
+        assert len(activites) == 2
+        assert activites[0].libelle == "Acteur"  # ordre alphabétique
+
+    def test_supprimer_activite(self, db):
+        """Une activité supprimée n'est plus retrouvable."""
+        from app.models.personne import Activite
+
+        aid = Activite(libelle="Musicien").sauvegarder(db)
+        Activite.supprimer(db, aid)
+        assert Activite.trouver_par_id(db, aid) is None
+
+
+class TestPersonne:
+    """Tests du modèle Personne."""
+
+    def test_creer_personne(self, db):
+        """Une personne peut être créée et retrouvée."""
+        from app.models.personne import Personne
+
+        pid = Personne(nom="Ridley Scott", date_naissance="1937-11-30").sauvegarder(db)
+        p = Personne.trouver_par_id(db, pid)
+        assert p.nom == "Ridley Scott"
+        assert p.date_naissance == "1937-11-30"
+        assert p.date_deces is None
+
+    def test_nom_obligatoire(self, db):
+        """La création d'une personne sans nom lève une ValueError."""
+        from app.models.personne import Personne
+
+        with pytest.raises(ValueError, match="nom"):
+            Personne(nom="")
+
+    def test_associer_activite(self, db):
+        """Une activité peut être associée à une personne."""
+        from app.models.personne import Activite, Personne
+
+        aid = Activite(libelle="Réalisateur").sauvegarder(db)
+        pid = Personne(nom="Ridley Scott").sauvegarder(db)
+
+        p = Personne.trouver_par_id(db, pid)
+        p.ajouter_activite(db, aid)
+        p.charger_activites(db)
+
+        assert len(p.activites) == 1
+        assert p.activites[0].libelle == "Réalisateur"
+
+    def test_retirer_activite(self, db):
+        """Une activité peut être dissociée d'une personne."""
+        from app.models.personne import Activite, Personne
+
+        aid = Activite(libelle="Acteur").sauvegarder(db)
+        pid = Personne(nom="Harrison Ford").sauvegarder(db)
+        p = Personne.trouver_par_id(db, pid)
+        p.ajouter_activite(db, aid)
+        p.retirer_activite(db, aid)
+        p.charger_activites(db)
+
+        assert p.activites == []
+
+    def test_supprimer_personne(self, db):
+        """Une personne supprimée n'est plus retrouvable."""
+        from app.models.personne import Personne
+
+        pid = Personne(nom="À supprimer").sauvegarder(db)
+        Personne.supprimer(db, pid)
+        assert Personne.trouver_par_id(db, pid) is None
+
+    def test_association_support_personne(self, db):
+        """Un support peut être associé à une personne avec un rôle."""
+        from app.models.personne import Personne
+        from app.models.support import Support
+
+        support = Support(titre="Alien", type_support="video", support="DVD")
+        support.sauvegarder(db)
+        pid = Personne(nom="Ridley Scott").sauvegarder(db)
+
+        support.associer_personne(db, pid, "realisateur")
+        support.charger_personnes(db)
+
+        assert len(support.personnes) == 1
+        assert support.personnes[0]["nom"] == "Ridley Scott"
+        assert support.personnes[0]["role"] == "realisateur"
+
+    def test_retirer_toutes_personnes_support(self, db):
+        """Les associations personne d'un support peuvent être effacées."""
+        from app.models.personne import Personne
+        from app.models.support import Support
+
+        support = Support(titre="Alien", type_support="video", support="DVD")
+        support.sauvegarder(db)
+        pid = Personne(nom="Ridley Scott").sauvegarder(db)
+        support.associer_personne(db, pid, "realisateur")
+
+        support.retirer_toutes_personnes(db)
+        support.charger_personnes(db)
+
+        assert support.personnes == []
 
 
 # ---------------------------------------------------------------------------

@@ -132,3 +132,10 @@ legend { font-weight: 600; padding: 0 .5rem; color: var(--texte-doux); }
 /* --- 404 --- */
 .erreur-page { text-align: center; padding: 4rem 1rem; }
 .erreur-page h1 { font-size: 5rem; color: var(--couleur-secondaire); }
+
+/* --- Pagination --- */
+.pagination { display: flex; align-items: center; gap: .4rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.pagination-info { color: var(--texte-doux); font-size: .9rem; margin-right: .5rem; }
+.pagination-ellipsis { padding: 0 .3rem; color: var(--texte-doux); }
+.btn.disabled { opacity: .4; pointer-events: none; }
+.filtres-par-page { display: flex; align-items: center; gap: .4rem; }

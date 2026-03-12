@@ -29,14 +29,32 @@
       {% if support.langue %}
         <dt>Langue</dt><dd>{{ support.langue }}</dd>
       {% endif %}
-      {% if support.interprete %}
-        <dt>Interprète</dt><dd>{{ support.interprete }}</dd>
+      {% set interpretes = support.personnes | selectattr('role', 'equalto', 'interprete') | list %}
+      {% if interpretes %}
+        <dt>Interprète(s)</dt>
+        <dd>
+          {% for p in interpretes %}
+            <a href="{{ url_for('personnes.detail', personne_id=p.id) }}">{{ p.nom }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </dd>
       {% endif %}
-      {% if support.realisateur %}
-        <dt>Réalisateur</dt><dd>{{ support.realisateur }}</dd>
+      {% set realisateurs = support.personnes | selectattr('role', 'equalto', 'realisateur') | list %}
+      {% if realisateurs %}
+        <dt>Réalisateur(s)</dt>
+        <dd>
+          {% for p in realisateurs %}
+            <a href="{{ url_for('personnes.detail', personne_id=p.id) }}">{{ p.nom }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </dd>
       {% endif %}
-      {% if support.acteurs %}
-        <dt>Acteurs</dt><dd>{{ support.acteurs }}</dd>
+      {% set acteurs = support.personnes | selectattr('role', 'equalto', 'acteur') | list %}
+      {% if acteurs %}
+        <dt>Acteurs</dt>
+        <dd>
+          {% for p in acteurs %}
+            <a href="{{ url_for('personnes.detail', personne_id=p.id) }}">{{ p.nom }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </dd>
       {% endif %}
     </dl>
 

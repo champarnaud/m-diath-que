@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Personnes — Médiathèque{% endblock %}
+
+{% block content %}
+<div class="liste-header">
+  <h1>Personnes</h1>
+  <div class="liste-actions">
+    <a href="{{ url_for('personnes.liste_activites') }}" class="btn">Activités</a>
+    <a href="{{ url_for('personnes.nouvelle') }}" class="btn btn-primary">+ Nouvelle personne</a>
+  </div>
+</div>
+
+{% if personnes %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Naissance</th>
+        <th>Décès</th>
+        <th>Activités</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for personne in personnes %}
+        <tr>
+          <td>
+            <a href="{{ url_for('personnes.detail', personne_id=personne.id) }}">
+              {{ personne.nom }}
+            </a>
+          </td>
+          <td>{{ personne.date_naissance or '—' }}</td>
+          <td>{{ personne.date_deces or '—' }}</td>
+          <td>
+            {% for a in personne.activites %}
+              <span class="badge">{{ a.libelle }}</span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endfor %}
+          </td>
+          <td class="actions">
+            <a href="{{ url_for('personnes.modifier', personne_id=personne.id) }}"
+               class="btn btn-sm">✏️</a>
+            <form method="post"
+                  action="{{ url_for('personnes.supprimer', personne_id=personne.id) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('Supprimer {{ personne.nom }} ?')">
+              <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>Aucune personne enregistrée. <a href="{{ url_for('personnes.nouvelle') }}">Ajouter la première ?</a></p>
+{% endif %}
+{% endblock %}

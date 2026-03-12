@@ -9,6 +9,7 @@ import pytest
 
 from app import create_app
 from app.models.db import init_db, get_db
+from app.models.personne import Personne
 from app.models.support import Support
 
 
@@ -29,31 +30,38 @@ def client(app):
 
 @pytest.fixture
 def support_audio(app):
-    """Insère un support audio en base et retourne son id."""
+    """Insère un support audio en base avec une personne associée."""
     db = get_db()
-    return Support(
+    support = Support(
         titre="Nevermind",
         type_support="audio",
         support="CD",
         genre="Grunge",
         date_sortie=1991,
-        interprete="Nirvana",
-    ).sauvegarder(db)
+    )
+    support_id = support.sauvegarder(db)
+    artiste_id = Personne(nom="Nirvana").sauvegarder(db)
+    support.associer_personne(db, artiste_id, "interprete")
+    return support_id
 
 
 @pytest.fixture
 def support_video(app):
-    """Insère un support vidéo en base et retourne son id."""
+    """Insère un support vidéo en base avec des personnes associées."""
     db = get_db()
-    return Support(
+    support = Support(
         titre="Jurassic Park",
         type_support="video",
         support="DVD",
         genre="Aventure",
         date_sortie=1993,
-        realisateur="Steven Spielberg",
-        acteurs="Sam Neill, Laura Dern",
-    ).sauvegarder(db)
+    )
+    support_id = support.sauvegarder(db)
+    real_id = Personne(nom="Steven Spielberg").sauvegarder(db)
+    acteur_id = Personne(nom="Sam Neill").sauvegarder(db)
+    support.associer_personne(db, real_id, "realisateur")
+    support.associer_personne(db, acteur_id, "acteur")
+    return support_id
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +130,7 @@ class TestFicheDetail:
         """La fiche affiche les informations du support."""
         response = client.get(f"/supports/{support_audio}")
         assert b"Nevermind" in response.data
-        assert b"Nirvana" in response.data
+        assert b"Nirvana" in response.data  # personne associée
 
     def test_fiche_inexistante_retourne_404(self, client):
         """Une fiche vers un identifiant inexistant retourne 404."""
@@ -153,7 +161,6 @@ class TestAjoutSupport:
                 "support": "CD",
                 "genre": "Rock",
                 "date_sortie": "1997",
-                "interprete": "Radiohead",
             },
             follow_redirects=True,
         )
@@ -179,7 +186,7 @@ class TestRecherche:
     """Tests du moteur de recherche."""
 
     def test_recherche_retourne_resultats(self, client, support_audio):
-        """La recherche retourne les supports correspondants."""
+        """La recherche retourne les supports correspondants (par nom de personne)."""
         response = client.get("/recherche?q=Nirvana")
         assert response.status_code == 200
         assert b"Nevermind" in response.data
