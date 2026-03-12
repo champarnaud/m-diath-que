@@ -3,6 +3,7 @@ Factory de l'application Flask Médiathèque.
 """
 
 import os
+from datetime import datetime
 from typing import Optional, Dict, Any
 
 from flask import Flask, render_template
@@ -34,6 +35,11 @@ def create_app(config_overrides: Optional[Dict[str, Any]] = None) -> Flask:
     # Création des dossiers nécessaires
     os.makedirs(app.instance_path, exist_ok=True)
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    # Variable `now` disponible dans tous les templates
+    @app.context_processor
+    def inject_now():
+        return {"now": datetime.now()}
 
     # Base de données
     from app.models.db import init_app as init_db_app

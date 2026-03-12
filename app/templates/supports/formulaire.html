@@ -25,8 +25,12 @@
 
     <div class="form-group">
       <label for="support">Support physique <span class="requis">*</span></label>
-      <input type="text" id="support" name="support" required placeholder="CD, DVD, Blu-ray, Vinyle…"
-             value="{{ support.support if support else '' }}">
+      <select id="support" name="support" required>
+        <option value="" disabled {{ 'selected' if not support }}>— Choisir —</option>
+        <option value="CD" {{ 'selected' if support and support.support == 'CD' }}>CD</option>
+        <option value="DVD" {{ 'selected' if support and support.support == 'DVD' }}>DVD</option>
+        <option value="Blu-Ray" {{ 'selected' if support and support.support == 'Blue-Ray' }}>Blue-Ray</option>
+      </select>
     </div>
 
     <div class="form-group">
@@ -38,8 +42,13 @@
     <div class="form-row">
       <div class="form-group">
         <label for="date_sortie">Année de sortie</label>
-        <input type="number" id="date_sortie" name="date_sortie" min="1900" max="2100"
-               value="{{ support.date_sortie or '' }}">
+        <select id="date_sortie" name="date_sortie">
+          {% set annee_courante = now.year %}
+          {% set annee_selectionnee = support.date_sortie if support and support.date_sortie else annee_courante %}
+          {% for annee in range(1950, 2101) %}
+            <option value="{{ annee }}" {{ 'selected' if annee == annee_selectionnee }}>{{ annee }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label for="duree">Durée (min)</label>
@@ -49,7 +58,7 @@
       <div class="form-group">
         <label for="langue">Langue</label>
         <input type="text" id="langue" name="langue"
-               value="{{ support.langue or '' }}">
+               value="{{ support.langue if support else 'Français' }}">
       </div>
     </div>
   </fieldset>

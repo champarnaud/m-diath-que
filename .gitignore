@@ -4,3 +4,5 @@ app/static/uploads/
 __pycache__/
 *.pyc
 *.db
+.DS_Store
+.env
