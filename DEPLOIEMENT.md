@@ -101,6 +101,8 @@ Le fichier `instance/mediatheque.db` est créé (ou réinitialisé) avec toutes 
 
 ## 4. Lancer l'application
 
+### En développement
+
 ```bash
 python run.py
 ```
@@ -115,11 +117,67 @@ Résultat attendu dans le terminal :
  * Debug mode: on
 ```
 
+### Avec gunicorn (serveur de production)
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:5000 "run:app"
+```
+
+- `gunicorn` : serveur WSGI de production, plus robuste que le serveur intégré de Flask.
+- `-w 4` : lance 4 *workers* (processus) en parallèle pour traiter les requêtes simultanées.
+- `-b 0.0.0.0:5000` : écoute sur toutes les interfaces réseau sur le port 5000 (accessible depuis d'autres machines, contrairement à `127.0.0.1`).
+- `"run:app"` : indique à gunicorn de charger l'objet `app` depuis le module `run` (fichier `run.py`).
+- Ajoutez `&` en fin de commande pour lancer le serveur en arrière-plan et libérer le terminal.
+
+> Installez gunicorn si nécessaire : `pip install gunicorn`
+
 Ouvrez un navigateur et accédez à :
 
 ```
 http://127.0.0.1:5000
 ```
+
+---
+
+## 5. Arrêter l'application
+
+### Serveur de développement Flask (premier plan)
+
+Dans le terminal où le serveur tourne, appuyez sur :
+
+```
+Ctrl + C
+```
+
+- `Ctrl + C` : envoie le signal `SIGINT` (interruption) au processus Python en cours. Flask intercepte ce signal et arrête proprement le serveur de développement.
+
+### Gunicorn (arrière-plan)
+
+Si gunicorn a été lancé en arrière-plan avec `&`, le `Ctrl + C` n'est pas disponible. Utilisez l'une des commandes suivantes :
+
+```bash
+# Arrêt propre de tous les processus gunicorn (recommandé)
+pkill gunicorn
+
+# Arrêt en ciblant le port (utile si plusieurs serveurs tournent)
+kill $(lsof -ti :5000)
+
+# Si le PID a été noté au lancement (ex : [1] 12345)
+kill 12345
+
+# En dernier recours, forcer l'arrêt immédiat (SIGKILL)
+pkill -9 gunicorn
+```
+
+- `pkill gunicorn` : envoie `SIGTERM` à tous les processus dont le nom contient "gunicorn", leur laissant le temps de finir les requêtes en cours.
+- `lsof -ti :5000` : retourne le PID du processus qui écoute sur le port 5000.
+- `kill` sans option envoie `SIGTERM` (arrêt propre) ; `kill -9` envoie `SIGKILL` (arrêt immédiat, sans nettoyage).
+
+> Si vous avez activé un environnement virtuel, n'oubliez pas de le désactiver ensuite :
+>
+> ```bash
+> deactivate
+> ```
 
 ---
 
