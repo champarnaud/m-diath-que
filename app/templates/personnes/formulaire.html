@@ -37,7 +37,7 @@
       <div class="form-group checkboxes">
         {% set activites_personne = personne.activites | map(attribute='id') | list if personne else [] %}
         {% for activite in activites_dispo %}
-          <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;">
+          <label class="checkbox-label" style="display:flex;align-items:left;gap:.5rem;">
             <input type="checkbox" name="activite_ids" value="{{ activite.id }}"
                    {{ 'checked' if activite.id in activites_personne }}>
             {{ activite.libelle }}
