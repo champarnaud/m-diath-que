@@ -208,6 +208,9 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
     """
     Lit les données du formulaire POST, valide et sauvegarde le support.
 
+    En modification (support_id non None), la pochette existante est
+    conservée si aucun nouveau fichier n'est transmis.
+
     Args:
         support_id: Identifiant existant pour une modification, None pour un ajout.
 
@@ -217,6 +220,14 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
     titre = request.form.get("titre", "").strip()
     type_support = request.form.get("type_support", "").strip()
     support_physique = request.form.get("support", "").strip()
+
+    # Récupérer la pochette existante pour ne pas l'écraser si absente du POST
+    db = get_db()
+    pochette_actuelle: Union[str, None] = None
+    if support_id is not None:
+        existant = Support.trouver_par_id(db, support_id)
+        if existant:
+            pochette_actuelle = existant.pochette
 
     try:
         support = Support(
@@ -238,11 +249,12 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
             langue=request.form.get("langue") or None,
             est_serie=request.form.get("est_serie") == "on",
             saisons=request.form.get("saisons") or None,
+            pochette=pochette_actuelle,
         )
     except ValueError as exc:
         return str(exc)
 
-    # Gestion de la pochette
+    # Gestion de la pochette : remplace uniquement si un nouveau fichier est fourni
     fichier = request.files.get("pochette")
     if fichier and fichier.filename:
         if not _extension_autorisee(fichier.filename):
@@ -254,7 +266,6 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
         fichier.save(chemin)
         support.pochette = nom_securise
 
-    db = get_db()
     support.sauvegarder(db)
 
     # Associations personnes : on repart de zéro puis on réinsère
