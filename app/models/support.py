@@ -9,6 +9,9 @@ from typing import Dict, List, Optional
 TYPES_VALIDES = ("audio", "video")
 CHAMPS_TRI = ("titre", "date_sortie", "genre")
 
+SAISON_MIN = 1
+SAISON_MAX = 20
+
 
 class Support:
     """
@@ -38,6 +41,8 @@ class Support:
         duree: Optional[int] = None,
         langue: Optional[str] = None,
         pochette: Optional[str] = None,
+        est_serie: bool = False,
+        saisons: Optional[str] = None,
         id: Optional[int] = None,  # noqa: A002
     ) -> None:
         if not titre or not titre.strip():
@@ -46,6 +51,12 @@ class Support:
             raise ValueError(
                 f"Le champ 'type_support' doit être parmi {TYPES_VALIDES}."
             )
+        if est_serie and type_support != "video":
+            raise ValueError(
+                "Seuls les supports vidéo peuvent être marqués comme série."
+            )
+        if est_serie:
+            Support._valider_saisons(saisons)
 
         self.id = id
         self.titre = titre.strip()
@@ -56,7 +67,71 @@ class Support:
         self.duree = duree
         self.langue = langue
         self.pochette = pochette
+        self.est_serie: bool = bool(est_serie)
+        self.saisons: Optional[str] = saisons if est_serie else None
         self.personnes: List[Dict] = []
+
+    # ------------------------------------------------------------------
+    # Validation des saisons
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _valider_saisons(saisons_str: Optional[str]) -> List[int]:
+        """
+        Valide la chaîne de saisons et retourne la liste des entiers.
+
+        Les valeurs doivent être des entiers entre SAISON_MIN et SAISON_MAX,
+        séparés par des virgules.
+
+        Args:
+            saisons_str: Chaîne de saisons (ex : "1,2,3").
+
+        Returns:
+            List[int]: Liste des numéros de saison validés.
+
+        Raises:
+            ValueError: Si la chaîne est vide, contient des valeurs non
+                        entières ou hors de l'intervalle autorisé.
+        """
+        if not saisons_str or not saisons_str.strip():
+            raise ValueError(
+                "Le champ 'saisons' est obligatoire pour une série."
+            )
+        parties = [s.strip() for s in saisons_str.split(",") if s.strip()]
+        if not parties:
+            raise ValueError(
+                "Le champ 'saisons' doit contenir au moins un numéro."
+            )
+        resultat: List[int] = []
+        for partie in parties:
+            try:
+                n = int(partie)
+            except ValueError:
+                raise ValueError(
+                    f"La valeur '{partie}' n'est pas un entier valide "
+                    f"pour un numéro de saison."
+                )
+            if n < SAISON_MIN or n > SAISON_MAX:
+                raise ValueError(
+                    f"Le numéro de saison {n} doit être compris entre "
+                    f"{SAISON_MIN} et {SAISON_MAX}."
+                )
+            resultat.append(n)
+        return resultat
+
+    def saisons_liste(self) -> List[int]:
+        """
+        Retourne la liste des numéros de saison sous forme d'entiers.
+
+        Retourne une liste vide si le support n'est pas une série
+        ou si aucune saison n'est renseignée.
+
+        Returns:
+            List[int]: Numéros de saison.
+        """
+        if not self.est_serie or not self.saisons:
+            return []
+        return [int(s.strip()) for s in self.saisons.split(",") if s.strip()]
 
     # ------------------------------------------------------------------
     # Associations personnes
@@ -143,12 +218,13 @@ class Support:
                 """
                 INSERT INTO support
                     (titre, type_support, support, genre, date_sortie,
-                     duree, langue, pochette)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     duree, langue, pochette, est_serie, saisons)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     self.titre, self.type_support, self.support, self.genre,
                     self.date_sortie, self.duree, self.langue, self.pochette,
+                    int(self.est_serie), self.saisons,
                 ),
             )
             db.commit()
@@ -158,12 +234,14 @@ class Support:
                 """
                 UPDATE support SET
                     titre=?, type_support=?, support=?, genre=?,
-                    date_sortie=?, duree=?, langue=?, pochette=?
+                    date_sortie=?, duree=?, langue=?, pochette=?,
+                    est_serie=?, saisons=?
                 WHERE id=?
                 """,
                 (
                     self.titre, self.type_support, self.support, self.genre,
                     self.date_sortie, self.duree, self.langue, self.pochette,
+                    int(self.est_serie), self.saisons,
                     self.id,
                 ),
             )
@@ -198,6 +276,8 @@ class Support:
             duree=row["duree"],
             langue=row["langue"],
             pochette=row["pochette"],
+            est_serie=bool(row["est_serie"]),
+            saisons=row["saisons"],
         )
 
     @classmethod

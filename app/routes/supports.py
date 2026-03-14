@@ -236,6 +236,8 @@ def _traiter_formulaire(support_id: Union[int, None]) -> Union[str, None]:
                 else None
             ),
             langue=request.form.get("langue") or None,
+            est_serie=request.form.get("est_serie") == "on",
+            saisons=request.form.get("saisons") or None,
         )
     except ValueError as exc:
         return str(exc)

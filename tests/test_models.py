@@ -407,3 +407,144 @@ class TestPrets:
         en_cours = Pret.lister_en_cours(db)
         assert len(en_cours) == 1
         assert en_cours[0].emprunteur == "Bob"
+
+
+# ---------------------------------------------------------------------------
+# Support : fonctionnalité Série
+# ---------------------------------------------------------------------------
+
+
+class TestSupportSerie:
+    """Tests du modèle Support pour la fonctionnalité Série."""
+
+    def test_support_video_peut_etre_serie(self, db):
+        """Un support vidéo peut être marqué comme série avec des saisons."""
+        from app.models.support import Support
+
+        support = Support(
+            titre="Breaking Bad",
+            type_support="video",
+            support="DVD",
+            est_serie=True,
+            saisons="1,2,3",
+        )
+        support_id = support.sauvegarder(db)
+
+        resultat = Support.trouver_par_id(db, support_id)
+        assert resultat.est_serie is True
+        assert resultat.saisons == "1,2,3"
+        assert resultat.saisons_liste() == [1, 2, 3]
+
+    def test_non_serie_par_defaut(self, db):
+        """Un support vidéo est non-série et sans saisons par défaut."""
+        from app.models.support import Support
+
+        support = Support(
+            titre="Inception",
+            type_support="video",
+            support="Blu-Ray",
+        )
+        assert support.est_serie is False
+        assert support.saisons is None
+        assert support.saisons_liste() == []
+
+    def test_support_audio_ne_peut_pas_etre_serie(self, db):
+        """Un support audio ne peut pas être marqué comme série."""
+        from app.models.support import Support
+
+        with pytest.raises(ValueError, match="série"):
+            Support(
+                titre="Album",
+                type_support="audio",
+                support="CD",
+                est_serie=True,
+                saisons="1",
+            )
+
+    def test_serie_sans_saisons_est_invalide(self, db):
+        """Une série sans saisons renseignées est refusée."""
+        from app.models.support import Support
+
+        with pytest.raises(ValueError, match="saison"):
+            Support(
+                titre="Breaking Bad",
+                type_support="video",
+                support="DVD",
+                est_serie=True,
+                saisons="",
+            )
+
+    def test_saisons_hors_limites_invalides(self, db):
+        """Un numéro de saison supérieur à 20 est refusé."""
+        from app.models.support import Support
+
+        with pytest.raises(ValueError, match="20"):
+            Support(
+                titre="Breaking Bad",
+                type_support="video",
+                support="DVD",
+                est_serie=True,
+                saisons="1,21",
+            )
+
+    def test_saison_zero_invalide(self, db):
+        """Le numéro de saison 0 est refusé (minimum : 1)."""
+        from app.models.support import Support
+
+        with pytest.raises(ValueError, match="1"):
+            Support(
+                titre="Breaking Bad",
+                type_support="video",
+                support="DVD",
+                est_serie=True,
+                saisons="0,1",
+            )
+
+    def test_saisons_non_numeriques_invalides(self, db):
+        """Les valeurs non entières dans les saisons sont refusées."""
+        from app.models.support import Support
+
+        with pytest.raises(ValueError, match="entier"):
+            Support(
+                titre="Breaking Bad",
+                type_support="video",
+                support="DVD",
+                est_serie=True,
+                saisons="1,abc",
+            )
+
+    def test_serie_persistee_et_relue(self, db):
+        """Les champs série sont correctement persistés et relus depuis la base."""
+        from app.models.support import Support
+
+        sid = Support(
+            titre="The Wire",
+            type_support="video",
+            support="DVD",
+            est_serie=True,
+            saisons="1,2,3,4,5",
+        ).sauvegarder(db)
+
+        lu = Support.trouver_par_id(db, sid)
+        assert lu.est_serie is True
+        assert lu.saisons_liste() == [1, 2, 3, 4, 5]
+
+    def test_serie_modifiable(self, db):
+        """On peut modifier les saisons d'une série existante."""
+        from app.models.support import Support
+
+        support = Support(
+            titre="Stranger Things",
+            type_support="video",
+            support="Blu-Ray",
+            est_serie=True,
+            saisons="1,2",
+        )
+        sid = support.sauvegarder(db)
+
+        lu = Support.trouver_par_id(db, sid)
+        lu.saisons = "1,2,3,4"
+        lu.sauvegarder(db)
+
+        maj = Support.trouver_par_id(db, sid)
+        assert maj.saisons_liste() == [1, 2, 3, 4]

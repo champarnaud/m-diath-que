@@ -99,6 +99,52 @@ Le fichier `instance/mediatheque.db` est créé (ou réinitialisé) avec toutes 
 
 ---
 
+## 3bis. Appliquer les migrations (base existante)
+
+Si la base de données existe déjà et contient des données, **ne pas utiliser `flask init-db`** (elle efface tout). Utilisez à la place la commande de migration, qui ajoute les colonnes manquantes de façon **idempotente** — elle vérifie ce qui est déjà présent et ne modifie que ce qui manque.
+
+```bash
+flask migrate
+```
+
+- `migrate` : commande personnalisée enregistrée dans `app/models/db.py`. Elle interroge `PRAGMA table_info(support)` pour connaître les colonnes existantes, puis exécute uniquement les `ALTER TABLE` nécessaires.
+- **Aucune donnée n'est effacée ou modifiée.**
+- La commande est idempotente : l'exécuter plusieurs fois ne produit aucun effet secondaire.
+
+Résultat attendu sur une base non encore migrée :
+
+```
+  + Colonne 'est_serie' ajoutée.
+  + Colonne 'saisons' ajoutée.
+Migration terminée : 2 colonne(s) ajoutée(s).
+```
+
+Résultat attendu si la migration a déjà été appliquée :
+
+```
+  ✓ Colonne 'est_serie' déjà présente.
+  ✓ Colonne 'saisons' déjà présente.
+Base de données déjà à jour.
+```
+
+### Quand appliquer `flask migrate` ?
+
+| Situation | Commande à utiliser |
+|---|---|
+| Première installation (base vierge) | `flask init-db` |
+| Mise à jour d'une base avec données | `flask migrate` |
+| Reset complet (développement) | `flask init-db` |
+
+### Fichiers de migration
+
+Les scripts SQL de migration sont versionnés dans le dossier `migrations/` :
+
+| Fichier | Date | Description |
+|---|---|---|
+| `migrations/001_series.sql` | 14/03/2026 | Ajout des colonnes `est_serie` et `saisons` sur la table `support` |
+
+---
+
 ## 4. Lancer l'application
 
 ### En développement
@@ -191,9 +237,12 @@ source .venv/bin/activate
 # 2. Installer les dépendances
 pip install -r requirements.txt
 
-# 3. Initialiser la base de données
+# 3. Initialiser la base de données (première installation)
 export FLASK_APP=run.py
 flask init-db
+
+# 3bis. OU, si la base existe déjà avec des données : migrer sans perte
+# flask migrate
 
 # 4. Lancer l'application
 python run.py
@@ -222,3 +271,4 @@ pytest
 | `instance/` | Flask au démarrage (`os.makedirs`) | Contient la base de données SQLite |
 | `instance/mediatheque.db` | `flask init-db` | Fichier de base de données SQLite |
 | `app/static/uploads/` | Flask au démarrage (`os.makedirs`) | Stockage des pochettes importées |
+| `migrations/` | Versionné dans le dépôt | Scripts SQL de migration incrémentale |

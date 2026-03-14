@@ -1,73 +1,66 @@
-{% extends "base.html" %}
-{% block title %}{{ 'Modifier' if support else 'Nouveau support' }} — Médiathèque{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}{{ 'Modifier' if support else 'Nouveau support' }} — Médiathèque{% endblock %} {% block content %}
 <h1>{{ 'Modifier le support' if support else 'Ajouter un support' }}</h1>
 
 <form method="post" enctype="multipart/form-data" class="formulaire">
 
-  <fieldset>
-    <legend>Informations générales</legend>
+    <fieldset>
+        <legend>Informations générales</legend>
 
-    <div class="form-group">
-      <label for="titre">Titre <span class="requis">*</span></label>
-      <input type="text" id="titre" name="titre" required
-             value="{{ support.titre if support else '' }}">
-    </div>
+        <div class="form-group">
+            <label for="titre">Titre <span class="requis">*</span></label>
+            <input type="text" id="titre" name="titre" required value="{{ support.titre if support else '' }}">
+        </div>
 
-    <div class="form-group">
-      <label for="type_support">Type <span class="requis">*</span></label>
-      <select id="type_support" name="type_support" required>
+        <div class="form-group">
+            <label for="type_support">Type <span class="requis">*</span></label>
+            <select id="type_support" name="type_support" required>
         <option value="audio" {{ 'selected' if support and support.type_support == 'audio' }}>Audio</option>
         <option value="video" {{ 'selected' if support and support.type_support == 'video' }}>Vidéo</option>
       </select>
-    </div>
+        </div>
 
-    <div class="form-group">
-      <label for="support">Support physique <span class="requis">*</span></label>
-      <select id="support" name="support" required>
+        <div class="form-group">
+            <label for="support">Support physique <span class="requis">*</span></label>
+            <select id="support" name="support" required>
         <option value="" disabled {{ 'selected' if not support }}>— Choisir —</option>
         <option value="CD" {{ 'selected' if support and support.support == 'CD' }}>CD</option>
         <option value="DVD" {{ 'selected' if support and support.support == 'DVD' }}>DVD</option>
         <option value="Blu-Ray" {{ 'selected' if support and support.support == 'Blue-Ray' }}>Blue-Ray</option>
       </select>
-    </div>
+        </div>
 
-    <div class="form-group">
-      <label for="genre">Genre</label>
-      <input type="text" id="genre" name="genre" placeholder="Rock, Jazz, Action, Comédie…"
-             value="{{ support.genre or '' }}">
-    </div>
+        <div class="form-group">
+            <label for="genre">Genre</label>
+            <input type="text" id="genre" name="genre" placeholder="Rock, Jazz, Action, Comédie…" value="{{ support.genre or '' }}">
+        </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="date_sortie">Année de sortie</label>
-        <select id="date_sortie" name="date_sortie">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="date_sortie">Année de sortie</label>
+                <select id="date_sortie" name="date_sortie">
           {% set annee_courante = now.year %}
           {% set annee_selectionnee = support.date_sortie if support and support.date_sortie else annee_courante %}
           {% for annee in range(1950, 2101) %}
             <option value="{{ annee }}" {{ 'selected' if annee == annee_selectionnee }}>{{ annee }}</option>
           {% endfor %}
         </select>
-      </div>
-      <div class="form-group">
-        <label for="duree">Durée (min)</label>
-        <input type="number" id="duree" name="duree" min="1"
-               value="{{ support.duree or '' }}">
-      </div>
-      <div class="form-group">
-        <label for="langue">Langue</label>
-        <input type="text" id="langue" name="langue"
-               value="{{ support.langue if support else 'Français' }}">
-      </div>
-    </div>
-  </fieldset>
+            </div>
+            <div class="form-group">
+                <label for="duree">Durée (min)</label>
+                <input type="number" id="duree" name="duree" min="1" value="{{ support.duree or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="langue">Langue</label>
+                <input type="text" id="langue" name="langue" value="{{ support.langue if support else 'Français' }}">
+            </div>
+        </div>
+    </fieldset>
 
-  <fieldset id="champs-audio">
-    <legend>Informations audio</legend>
-    <div class="form-group">
-      <label for="interprete_ids">Groupe / Interprète</label>
-      <select id="interprete_ids" name="interprete_ids" multiple size="5">
+    <fieldset id="champs-audio">
+        <legend>Informations audio</legend>
+        <div class="form-group">
+            <label for="interprete_ids">Groupe / Interprète</label>
+            <select id="interprete_ids" name="interprete_ids" multiple size="5">
         {% for p in interpretes %}
           <option value="{{ p.id }}"
                   {{ 'selected' if p.id in ids_interpretes }}>
@@ -77,18 +70,36 @@
           <option disabled>Aucune personne avec activité interprète/musicien</option>
         {% endfor %}
       </select>
-      <p class="form-hint">
-        Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
-        <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
-      </p>
-    </div>
-  </fieldset>
+            <p class="form-hint">
+                Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
+                <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
+            </p>
+        </div>
+    </fieldset>
 
-  <fieldset id="champs-video">
-    <legend>Informations vidéo</legend>
-    <div class="form-group">
-      <label for="realisateur_ids">Réalisateur(s)</label>
-      <select id="realisateur_ids" name="realisateur_ids" multiple size="4">
+    <fieldset id="champs-video">
+        <legend>Informations vidéo</legend>
+
+        <div class="form-group">
+            <label class="checkbox-label">
+        <input type="checkbox" id="est_serie" name="est_serie"
+               {{ 'checked' if support and support.est_serie }}
+               onchange="majSaisons()">
+        Série
+      </label>
+        </div>
+
+        <div class="form-group" id="champ-saisons">
+            <label for="saisons">Saison(s) <span class="requis">*</span></label>
+            <input type="text" id="saisons" name="saisons" value="{{ support.saisons if support and support.saisons else '' }}" placeholder="ex : 1, 2, 3" pattern="^([1-9]|1[0-9]|20)(,\s*([1-9]|1[0-9]|20))*$" title="Entiers entre 1 et 20, séparés par des virgules">
+            <p class="form-hint">
+                Numéros de saisons disponibles, séparés par des virgules (1–20).
+            </p>
+        </div>
+
+        <div class="form-group">
+            <label for="realisateur_ids">Réalisateur(s)</label>
+            <select id="realisateur_ids" name="realisateur_ids" multiple size="4">
         {% for p in realisateurs %}
           <option value="{{ p.id }}"
                   {{ 'selected' if p.id in ids_realisateurs }}>
@@ -98,10 +109,10 @@
           <option disabled>Aucune personne avec activité réalisateur</option>
         {% endfor %}
       </select>
-    </div>
-    <div class="form-group">
-      <label for="acteur_ids">Acteurs principaux</label>
-      <select id="acteur_ids" name="acteur_ids" multiple size="6">
+        </div>
+        <div class="form-group">
+            <label for="acteur_ids">Acteurs principaux</label>
+            <select id="acteur_ids" name="acteur_ids" multiple size="6">
         {% for p in acteurs %}
           <option value="{{ p.id }}"
                   {{ 'selected' if p.id in ids_acteurs }}>
@@ -111,43 +122,57 @@
           <option disabled>Aucune personne avec activité acteur/comédien</option>
         {% endfor %}
       </select>
-      <p class="form-hint">
-        Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
-        <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
-      </p>
-    </div>
-  </fieldset>
+            <p class="form-hint">
+                Ctrl+clic (ou Cmd+clic) pour sélectionner plusieurs.
+                <a href="{{ url_for('personnes.nouvelle') }}" target="_blank">Ajouter une personne ↗</a>
+            </p>
+        </div>
+    </fieldset>
 
-  <fieldset>
-    <legend>Pochette</legend>
-    <div class="form-group">
-      <label for="pochette">Image de pochette</label>
-      {% if support and support.pochette %}
-        <img src="{{ url_for('static', filename='uploads/' + support.pochette) }}"
-             alt="Pochette actuelle" class="pochette-mini">
-      {% endif %}
-      <input type="file" id="pochette" name="pochette" accept="image/*">
-    </div>
-  </fieldset>
+    <fieldset>
+        <legend>Pochette</legend>
+        <div class="form-group">
+            <label for="pochette">Image de pochette</label> {% if support and support.pochette %}
+            <img src="{{ url_for('static', filename='uploads/' + support.pochette) }}" alt="Pochette actuelle" class="pochette-mini"> {% endif %}
+            <input type="file" id="pochette" name="pochette" accept="image/*">
+        </div>
+    </fieldset>
 
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary">
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
       {{ 'Enregistrer les modifications' if support else 'Ajouter le support' }}
     </button>
-    <a href="{{ url_for('supports.liste') }}" class="btn">Annuler</a>
-  </div>
+        <a href="{{ url_for('supports.liste') }}" class="btn">Annuler</a>
+    </div>
 </form>
 
 <script>
-  // Affiche/masque les sections audio/vidéo selon le type sélectionné
-  const select = document.getElementById('type_support');
-  function majChamps() {
-    document.getElementById('champs-audio').style.display =
-      select.value === 'audio' ? '' : 'none';
-    document.getElementById('champs-video').style.display =
-      select.value === 'video' ? '' : 'none';
-  }
-  select.addEventListener('change', majChamps);
-  majChamps();
+    // Affiche/masque les sections audio/vidéo selon le type sélectionné
+    const select = document.getElementById('type_support');
+
+    function majChamps() {
+        const estVideo = select.value === 'video';
+        document.getElementById('champs-audio').style.display =
+            select.value === 'audio' ? '' : 'none';
+        document.getElementById('champs-video').style.display =
+            estVideo ? '' : 'none';
+        if (!estVideo) {
+            // Réinitialiser la série si on repasse en audio
+            document.getElementById('est_serie').checked = false;
+            majSaisons();
+        }
+    }
+
+    // Affiche/masque le champ saisons selon la checkbox Série
+    function majSaisons() {
+        const coche = document.getElementById('est_serie').checked;
+        const champSaisons = document.getElementById('champ-saisons');
+        champSaisons.style.display = coche ? '' : 'none';
+        document.getElementById('saisons').required = coche;
+    }
+
+    select.addEventListener('change', majChamps);
+    majChamps();
+    majSaisons();
 </script>
 {% endblock %}

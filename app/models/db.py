@@ -55,6 +55,46 @@ def init_db_command() -> None:
     click.echo("Base de données initialisée.")
 
 
+@click.command("migrate")
+def migrate_command() -> None:
+    """
+    Applique les migrations SQL de façon idempotente.
+
+    Vérifie l'existence de chaque colonne via PRAGMA table_info avant
+    d'exécuter l'ALTER TABLE correspondant. Aucune donnée n'est effacée.
+    """
+    db = get_db()
+    colonnes_support = [
+        row[1]
+        for row in db.execute("PRAGMA table_info(support)").fetchall()
+    ]
+
+    # --- Migration 001 : champs série ---
+    ajouts = 0
+    if "est_serie" not in colonnes_support:
+        db.execute(
+            "ALTER TABLE support ADD COLUMN est_serie INTEGER NOT NULL DEFAULT 0"
+        )
+        db.commit()
+        click.echo("  + Colonne 'est_serie' ajoutée.")
+        ajouts += 1
+    else:
+        click.echo("  ✓ Colonne 'est_serie' déjà présente.")
+
+    if "saisons" not in colonnes_support:
+        db.execute("ALTER TABLE support ADD COLUMN saisons TEXT")
+        db.commit()
+        click.echo("  + Colonne 'saisons' ajoutée.")
+        ajouts += 1
+    else:
+        click.echo("  ✓ Colonne 'saisons' déjà présente.")
+
+    if ajouts:
+        click.echo(f"Migration terminée : {ajouts} colonne(s) ajoutée(s).")
+    else:
+        click.echo("Base de données déjà à jour.")
+
+
 def init_app(app: Flask) -> None:
     """
     Enregistre les fonctions de gestion de la base dans l'application Flask.
@@ -64,3 +104,4 @@ def init_app(app: Flask) -> None:
     """
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+    app.cli.add_command(migrate_command)

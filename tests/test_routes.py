@@ -195,3 +195,77 @@ class TestRecherche:
         """Une recherche avec un terme vide retourne la page sans erreur."""
         response = client.get("/recherche?q=")
         assert response.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Série : routes
+# ---------------------------------------------------------------------------
+
+
+class TestSupportSerieRoutes:
+    """Tests des routes pour la fonctionnalité Série."""
+
+    def test_ajout_support_serie(self, client):
+        """La soumission du formulaire crée un support vidéo de type série."""
+        response = client.post(
+            "/supports/nouveau",
+            data={
+                "titre": "Breaking Bad",
+                "type_support": "video",
+                "support": "DVD",
+                "est_serie": "on",
+                "saisons": "1,2,3",
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Breaking Bad" in response.data
+
+    def test_saisons_invalides_rejetees(self, client):
+        """Un formulaire avec un numéro de saison > 20 est rejeté."""
+        response = client.post(
+            "/supports/nouveau",
+            data={
+                "titre": "Breaking Bad",
+                "type_support": "video",
+                "support": "DVD",
+                "est_serie": "on",
+                "saisons": "1,25",
+            },
+        )
+        assert response.status_code == 200
+        assert "saison" in response.data.decode("utf-8").lower()
+
+    def test_fiche_detail_affiche_serie(self, client, app):
+        """La fiche d'un support série affiche le badge Série et les saisons."""
+        from app.models.db import get_db
+        from app.models.support import Support
+
+        db = get_db()
+        sid = Support(
+            titre="The Wire",
+            type_support="video",
+            support="DVD",
+            est_serie=True,
+            saisons="1,2,3,4,5",
+        ).sauvegarder(db)
+
+        response = client.get(f"/supports/{sid}")
+        assert response.status_code == 200
+        contenu = response.data.decode("utf-8")
+        assert "Série" in contenu
+        assert "1, 2, 3, 4, 5" in contenu
+
+    def test_non_serie_pas_de_saisons(self, client):
+        """La fiche d'un support non-série n'affiche pas de saisons."""
+        response = client.post(
+            "/supports/nouveau",
+            data={
+                "titre": "Inception",
+                "type_support": "video",
+                "support": "Blu-Ray",
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert "Saison" not in response.data.decode("utf-8")
