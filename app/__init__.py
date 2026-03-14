@@ -8,6 +8,8 @@ from typing import Optional, Dict, Any
 
 from flask import Flask, render_template
 
+from config import Config
+
 
 def create_app(config_overrides: Optional[Dict[str, Any]] = None) -> Flask:
     """
@@ -22,11 +24,16 @@ def create_app(config_overrides: Optional[Dict[str, Any]] = None) -> Flask:
     """
     app = Flask(__name__, instance_relative_config=True)
 
-    # Configuration par défaut
-    app.config.from_mapping(
-        SECRET_KEY="dev-secret-key",
-        DATABASE=os.path.join(app.instance_path, "mediatheque.db"),
-        UPLOAD_FOLDER=os.path.join(app.root_path, "static", "uploads"),
+    # Chargement de la configuration depuis config.Config
+    app.config.from_object(Config)
+
+    # Chemins absolus qui dépendent de l'instance Flask (non calculables
+    # dans config.py sans contexte applicatif)
+    app.config["DATABASE"] = os.environ.get(
+        "DATABASE", os.path.join(app.instance_path, "mediatheque.db")
+    )
+    app.config["UPLOAD_FOLDER"] = os.path.join(
+        app.root_path, "static", "uploads"
     )
 
     if config_overrides:

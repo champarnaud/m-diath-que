@@ -7,6 +7,23 @@ import sqlite3
 from typing import List, Optional
 
 
+# ------------------------------------------------------------------
+# Constantes métier : mots-clés de rôles pour le filtrage des personnes
+# ------------------------------------------------------------------
+
+# Sous-chaînes cherchées dans le libellé de l'activité (insensible à la casse)
+MOTS_CLES_INTERPRETE: List[str] = [
+    "interpr", "chanteur", "chanteuse", "musicien",
+    "groupe", "artiste", "band",
+]
+MOTS_CLES_REALISATEUR: List[str] = [
+    "réalisateur", "realisateur", "metteur", "director",
+]
+MOTS_CLES_ACTEUR: List[str] = [
+    "acteur", "actrice", "comédien", "comedien",
+]
+
+
 class Activite:
     """
     Représente une activité ou profession artistique.
@@ -405,6 +422,48 @@ class Personne:
         for p in personnes:
             p.activites = acts_par_personne.get(p.id, [])
         return personnes
+
+    @classmethod
+    def lister_interpretes(cls, db: sqlite3.Connection) -> List["Personne"]:
+        """
+        Retourne les personnes dont l'activité correspond à un rôle
+        d'interprète (chanteur, musicien, groupe…).
+
+        Args:
+            db: Connexion SQLite active.
+
+        Returns:
+            List[Personne]: Interprètes triés alphabétiquement.
+        """
+        return cls.lister_pour_role(db, MOTS_CLES_INTERPRETE)
+
+    @classmethod
+    def lister_realisateurs(cls, db: sqlite3.Connection) -> List["Personne"]:
+        """
+        Retourne les personnes dont l'activité correspond à un rôle
+        de réalisateur / metteur en scène.
+
+        Args:
+            db: Connexion SQLite active.
+
+        Returns:
+            List[Personne]: Réalisateurs triés alphabétiquement.
+        """
+        return cls.lister_pour_role(db, MOTS_CLES_REALISATEUR)
+
+    @classmethod
+    def lister_acteurs(cls, db: sqlite3.Connection) -> List["Personne"]:
+        """
+        Retourne les personnes dont l'activité correspond à un rôle
+        d'acteur / comédien.
+
+        Args:
+            db: Connexion SQLite active.
+
+        Returns:
+            List[Personne]: Acteurs triés alphabétiquement.
+        """
+        return cls.lister_pour_role(db, MOTS_CLES_ACTEUR)
 
     @classmethod
     def supprimer(cls, db: sqlite3.Connection, personne_id: int) -> None:

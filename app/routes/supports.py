@@ -26,16 +26,13 @@ bp = Blueprint("supports", __name__, url_prefix="/supports")
 
 EXTENSIONS_AUTORISEES = {"png", "jpg", "jpeg", "gif", "webp"}
 
-_MOTS_CLES_INTERPRETE = ["interpr", "chanteur", "chanteuse", "musicien", "groupe", "artiste", "band"]
-_MOTS_CLES_REALISATEUR = ["réalisateur", "realisateur", "metteur", "director"]
-_MOTS_CLES_ACTEUR = ["acteur", "actrice", "comédien", "comedien"]
-
 
 def _listes_personnes_formulaire(db):
+    """Retourne les listes (interprètes, réalisateurs, acteurs) pour le formulaire."""
     return (
-        Personne.lister_pour_role(db, _MOTS_CLES_INTERPRETE),
-        Personne.lister_pour_role(db, _MOTS_CLES_REALISATEUR),
-        Personne.lister_pour_role(db, _MOTS_CLES_ACTEUR),
+        Personne.lister_interpretes(db),
+        Personne.lister_realisateurs(db),
+        Personne.lister_acteurs(db),
     )
 
 
