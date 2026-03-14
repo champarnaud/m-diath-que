@@ -17,6 +17,8 @@ CREATE TABLE support (
     duree        INTEGER,
     langue       TEXT,
     pochette     TEXT,
+    est_serie    INTEGER NOT NULL DEFAULT 0,
+    saisons      TEXT,
     created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
