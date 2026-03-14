@@ -464,3 +464,4 @@ class Support:
             support_id: Identifiant du support à supprimer.
         """
         db.execute("DELETE FROM support WHERE id = ?", (support_id,))
+        db.commit()
