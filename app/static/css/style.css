@@ -464,8 +464,20 @@ legend {
     margin-bottom: 0;
 }
 
-.checkboxes .checkbox-label input[type="checkbox"] {
+.checkboxes .checkbox-label input[type="checkbox"],
+.form-group>.checkbox-label input[type="checkbox"] {
     width: auto;
+}
+
+
+/* Checkbox isolée dans un form-group (ex : case "Série") */
+
+.form-group>.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-weight: normal;
+    cursor: pointer;
 }
 
 .form-row {
