@@ -26,10 +26,15 @@
         <tr>
           <td>
             <a href="{{ url_for('personnes.detail', personne_id=personne.id) }}">
-              {{ personne.nom }}
+              {% if personne.est_decede %}✝ {% endif %}{{ personne.nom }}
             </a>
           </td>
-          <td>{{ personne.date_naissance or '—' }}</td>
+          <td>
+            {{ personne.date_naissance or '—' }}
+            {% if personne.age is not none %}
+              <span class="text-muted">({{ personne.age }} ans)</span>
+            {% endif %}
+          </td>
           <td>{{ personne.date_deces or '—' }}</td>
           <td>
             {% for a in personne.activites %}

@@ -321,6 +321,77 @@ class TestPersonne:
         Personne.supprimer(db, pid)
         assert Personne.trouver_par_id(db, pid) is None
 
+
+class TestPersonneAge:
+    """Tests des propriétés est_decede et age."""
+
+    def test_est_decede_faux_si_pas_de_date_deces(self):
+        """est_decede est False lorsque date_deces n'est pas renseignée."""
+        from app.models.personne import Personne
+
+        p = Personne(nom="Vivant", date_naissance="1980-01-01")
+        assert p.est_decede is False
+
+    def test_est_decede_vrai_si_date_deces_renseignee(self):
+        """est_decede est True lorsque date_deces est renseignée."""
+        from app.models.personne import Personne
+
+        p = Personne(
+            nom="Feu Quelqu'un",
+            date_naissance="1946-09-18",
+            date_deces="2024-05-01",
+        )
+        assert p.est_decede is True
+
+    def test_age_none_si_pas_de_date_naissance(self):
+        """age est None si date_naissance n'est pas renseignée."""
+        from app.models.personne import Personne
+
+        p = Personne(nom="Inconnu")
+        assert p.age is None
+
+    def test_age_personne_vivante(self):
+        """age retourne l'année courante moins l'année de naissance."""
+        import datetime
+
+        from app.models.personne import Personne
+
+        p = Personne(nom="Vivant", date_naissance="1946-09-18")
+        annee_actuelle = datetime.date.today().year
+        assert p.age == annee_actuelle - 1946
+
+    def test_age_personne_vivante_date_naissance_format_court(self):
+        """age fonctionne avec une date de naissance en format court (AAAA)."""
+        import datetime
+
+        from app.models.personne import Personne
+
+        p = Personne(nom="Vivant", date_naissance="1960")
+        annee_actuelle = datetime.date.today().year
+        assert p.age == annee_actuelle - 1960
+
+    def test_age_personne_decedee(self):
+        """age retourne l'année de décès moins l'année de naissance."""
+        from app.models.personne import Personne
+
+        p = Personne(
+            nom="Feu Quelqu'un",
+            date_naissance="1946-09-18",
+            date_deces="2024-05-01",
+        )
+        assert p.age == 2024 - 1946
+
+    def test_age_personne_decedee_format_court(self):
+        """age fonctionne avec des dates en format court (AAAA) au décès."""
+        from app.models.personne import Personne
+
+        p = Personne(
+            nom="Feu Quelqu'un",
+            date_naissance="1946",
+            date_deces="2024",
+        )
+        assert p.age == 2024 - 1946
+
     def test_association_support_personne(self, db):
         """Un support peut être associé à une personne avec un rôle."""
         from app.models.personne import Personne

@@ -4,6 +4,7 @@ artistiques de la médiathèque (réalisateurs, acteurs, interprètes…).
 """
 
 import sqlite3
+from datetime import date
 from typing import List, Optional
 
 
@@ -159,6 +160,36 @@ class Personne:
         self.date_naissance = date_naissance
         self.date_deces = date_deces
         self.activites: List[Activite] = []
+
+    # ------------------------------------------------------------------
+    # Propriétés calculées
+    # ------------------------------------------------------------------
+
+    @property
+    def est_decede(self) -> bool:
+        """Indique si la personne est décédée (date de décès renseignée)."""
+        return self.date_deces is not None
+
+    @property
+    def age(self) -> Optional[int]:
+        """
+        Calcule l'âge de la personne en années.
+
+        Pour une personne décédée, retourne l'âge au moment du décès.
+        Pour une personne vivante, retourne l'âge à la date d'aujourd'hui.
+        Retourne None si la date de naissance n'est pas renseignée.
+
+        Les dates sont lues en format libre ; seuls les 4 premiers
+        caractères (l'année) sont utilisés.
+        """
+        if not self.date_naissance:
+            return None
+        annee_naissance = int(self.date_naissance[:4])
+        if self.est_decede:
+            annee_fin = int(self.date_deces[:4])  # type: ignore[index]
+        else:
+            annee_fin = date.today().year
+        return annee_fin - annee_naissance
 
     # ------------------------------------------------------------------
     # Persistance
