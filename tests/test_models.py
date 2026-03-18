@@ -479,6 +479,58 @@ class TestPrets:
         assert len(en_cours) == 1
         assert en_cours[0].emprunteur == "Bob"
 
+    def test_emprunteur_obligatoire(self, db):
+        """La création d'un prêt sans emprunteur lève une ValueError."""
+        from app.models.pret import Pret
+
+        with pytest.raises(ValueError, match="emprunteur"):
+            Pret(support_id=1, emprunteur="")
+
+    def test_emprunteur_spaces_rejete(self, db):
+        """La création d'un prêt avec un emprunteur vide (espaces) lève une ValueError."""
+        from app.models.pret import Pret
+
+        with pytest.raises(ValueError, match="emprunteur"):
+            Pret(support_id=1, emprunteur="   ")
+
+    def test_emprunteur_est_strippé(self, db):
+        """L'emprunteur est normalisé (strip) à la création."""
+        from app.models.pret import Pret
+        from app.models.support import Support
+
+        support_id = Support(
+            titre="Titanic", type_support="video", support="DVD"
+        ).sauvegarder(db)
+        pret_id = Pret(support_id=support_id, emprunteur="  Alice  ").sauvegarder(db)
+        pret = Pret.trouver_par_id(db, pret_id)
+        assert pret.emprunteur == "Alice"
+
+    def test_trouver_pret_inexistant_retourne_none(self, db):
+        """Rechercher un prêt avec un ID inexistant retourne None."""
+        from app.models.pret import Pret
+
+        assert Pret.trouver_par_id(db, 99999) is None
+
+    def test_retourner_pret_deja_rendu(self, db):
+        """Appeler retourner sur un prêt déjà rendu ne lève pas d'erreur."""
+        from app.models.pret import Pret
+        from app.models.support import Support
+
+        support_id = Support(
+            titre="Titanic", type_support="video", support="DVD"
+        ).sauvegarder(db)
+        pret_id = Pret(support_id=support_id, emprunteur="Alice").sauvegarder(db)
+
+        Pret.retourner(db, pret_id)
+        date_premiere_retour = Pret.trouver_par_id(db, pret_id).date_retour
+
+        # Un deuxième appel ne lève pas d'erreur
+        Pret.retourner(db, pret_id)
+        date_deuxieme_retour = Pret.trouver_par_id(db, pret_id).date_retour
+
+        assert date_premiere_retour is not None
+        assert date_deuxieme_retour is not None
+
 
 # ---------------------------------------------------------------------------
 # Support : fonctionnalité Série

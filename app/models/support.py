@@ -452,6 +452,41 @@ class Support:
         return [cls._depuis_row(r) for r in rows]
 
     @classmethod
+    def charger_personnes_batch(
+        cls, db: sqlite3.Connection, supports: List["Support"]
+    ) -> None:
+        """
+        Charge les personnes associées de plusieurs supports en une seule
+        requête SQL. Évite le problème N+1 lors du listage de supports.
+
+        Args:
+            db:       Connexion SQLite active.
+            supports: Liste de supports dont charger les personnes.
+        """
+        if not supports:
+            return
+        ids = [s.id for s in supports]
+        placeholders = ",".join("?" * len(ids))
+        rows = db.execute(
+            f"""
+            SELECT sp.support_id, p.id, p.nom, sp.role
+            FROM personne p
+            JOIN support_personne sp ON sp.personne_id = p.id
+            WHERE sp.support_id IN ({placeholders})
+            ORDER BY sp.role, p.nom COLLATE NOCASE
+            """,
+            ids,
+        ).fetchall()
+        personnes_par_support: Dict = {}
+        for row in rows:
+            sid = row["support_id"]
+            personnes_par_support.setdefault(sid, []).append(
+                {"id": row["id"], "nom": row["nom"], "role": row["role"]}
+            )
+        for s in supports:
+            s.personnes = personnes_par_support.get(s.id, [])
+
+    @classmethod
     def supprimer(cls, db: sqlite3.Connection, support_id: int) -> None:
         """
         Supprime le support identifié par son id.

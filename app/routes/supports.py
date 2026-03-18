@@ -82,8 +82,7 @@ def liste() -> str:
     nb_pages = max(1, (total + par_page - 1) // par_page)
     page = min(page, nb_pages)
 
-    for s in supports:
-        s.charger_personnes(db)
+    Support.charger_personnes_batch(db, supports)
 
     return render_template(
         "supports/liste.html",

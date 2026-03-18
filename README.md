@@ -1,19 +1,13 @@
 # Médiathèque
 
-Application de gestion d'une collection de supports audiovisuels (CD audio, CD vidéo, DVD, Blu-ray, vinyles, etc.), accessible via un navigateur web.
-
----
-
-## Description du projet
-
-**Médiathèque** permet de cataloguer, rechercher et organiser une collection personnelle de supports audiovisuels. Chaque support est décrit par une fiche détaillée, et l'ensemble de la collection est consultable et filtrable depuis une interface web.
+Application web personnelle de gestion d'une collection de supports audiovisuels — CD, DVD, Blu-ray, vinyles, séries…
 
 ---
 
 ## Fonctionnalités
 
-### Fiches support
-Chaque support dispose d'une fiche contenant (liste non exhaustive) :
+### Catalogue de supports
+Chaque fiche contient :
 
 | Champ | Description |
 |---|---|
@@ -21,23 +15,26 @@ Chaque support dispose d'une fiche contenant (liste non exhaustive) :
 | Type | Audio ou Vidéo |
 | Support | CD, DVD, Blu-ray, vinyle… |
 | Genre | Genre musical ou cinématographique |
-| Date de sortie | Année de publication |
-| Durée | Durée totale |
+| Année de sortie | Année de publication |
+| Durée | Durée totale (minutes) |
 | Langue | Langue principale |
-| Groupe / Interprète | Pour les supports audio |
+| Interprète / Groupe | Pour les supports audio |
 | Réalisateur | Pour les supports vidéo |
 | Acteurs principaux | Pour les supports vidéo |
-| Pochette | Image de couverture |
+| Pochette | Image de couverture (upload) |
+| Série | Pour les vidéos : case à cocher + liste de saisons (1–20) |
 
-### Recherche
-- Moteur de recherche textuel sur les principaux champs (titre, artiste, réalisateur, acteurs…)
+### Personnes & activités
+- Fiches personnes (artistes, réalisateurs, acteurs…) liées aux supports
+- Activités professionnelles associées (interprète, réalisateur, acteur…)
 
-### Listes et tri
-- Affichage de la collection filtrée par type (Audio / Vidéo)
-- Tri par : titre, réalisateur, auteur/interprète, acteur
+### Recherche & navigation
+- Moteur de recherche textuel (titre, artiste, réalisateur, acteurs)
+- Filtrage par type (Audio / Vidéo)
+- Tri et pagination de la liste
 
-### Gestion des prêts *(à venir)*
-- Suivi des supports prêtés à des tiers
+### Prêts *(implémenté en base, interface à venir)*
+- Suivi des supports prêtés et rendus
 
 ---
 
@@ -45,38 +42,125 @@ Chaque support dispose d'une fiche contenant (liste non exhaustive) :
 
 | Composant | Technologie |
 |---|---|
-| Langage | Python |
-| Interface web | Flask |
-| Base de données | SQLite |
-| Tests | pytest (TDD) |
+| Langage | Python 3.10+ |
+| Framework web | Flask 3+ |
+| Base de données | SQLite (via `sqlite3` stdlib) |
+| Templates | Jinja2 |
+| Tests | pytest + pytest-flask (TDD) |
 
 ---
 
-## Architecture du projet
+## Installation
+
+### 1. Environnement virtuel
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. Dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Base de données
+
+**Première installation :**
+
+```bash
+export FLASK_APP=run.py
+flask init-db
+```
+
+**Mise à jour d'une base existante (sans perte de données) :**
+
+```bash
+flask migrate
+```
+
+> [!WARNING]
+> `flask init-db` recrée toutes les tables et efface les données existantes. Utilisez `flask migrate` pour mettre à jour une base en production.
+
+### 4. Lancer l'application
+
+```bash
+python run.py
+```
+
+Ouvrez [http://127.0.0.1:5000](http://127.0.0.1:5000) dans votre navigateur.
+
+---
+
+## Architecture
 
 ```
-Médiathèque/
-├── README.md
-├── app/                  # Code source de l'application Flask
-│   ├── __init__.py
-│   ├── models/           # Modèles de données (SQLite)
-│   ├── routes/           # Routes Flask
-│   ├── templates/        # Templates HTML (Jinja2)
-│   └── static/           # Fichiers statiques (CSS, JS, images)
-├── tests/                # Tests unitaires et d'intégration (pytest)
-├── instance/             # Base de données SQLite (non versionnée)
-└── requirements.txt      # Dépendances Python
+m-diath-que/
+├── app/
+│   ├── __init__.py          # Factory Flask (create_app)
+│   ├── schema.sql           # Schéma initial de la base
+│   ├── models/
+│   │   ├── db.py            # Connexion SQLite, CLI init-db / migrate
+│   │   ├── support.py       # Modèle Support (avec validation séries)
+│   │   ├── personne.py      # Modèles Personne & Activite
+│   │   └── pret.py          # Modèle Pret
+│   ├── routes/
+│   │   ├── supports.py      # CRUD supports
+│   │   ├── personnes.py     # CRUD personnes & activités
+│   │   └── recherche.py     # Moteur de recherche
+│   ├── templates/           # Templates Jinja2
+│   └── static/              # CSS + uploads pochettes
+├── migrations/              # Scripts ALTER TABLE versionnés
+├── tests/
+│   ├── test_models.py       # Tests unitaires (53 tests)
+│   └── test_routes.py       # Tests d'intégration
+├── config.py                # Classes Config / TestingConfig
+└── run.py                   # Point d'entrée
+```
+
+### Modèle de données
+
+```
+support ──< support_personne >── personne ──< personne_activite >── activite
+support ──< pret
 ```
 
 ---
 
-## Méthodologie de développement
+## Tests
 
-Le projet est développé en suivant le **Test Driven Design (TDD)** :
+```bash
+pytest
+```
 
-1. **Red** — Écrire un test qui décrit le comportement attendu (il échoue).
-2. **Green** — Implémenter le minimum de code pour faire passer le test.
-3. **Refactor** — Améliorer le code sans modifier son comportement.
+Les tests utilisent une base en mémoire (`:memory:`) et ne touchent pas à `instance/mediatheque.db`.
+
+```
+53 passed in ~0.8s
+```
+
+---
+
+## Méthodologie
+
+Le projet suit le cycle **TDD (Test Driven Design)** :
+
+1. **Red** — Écrire un test décrivant le comportement attendu (il échoue).
+2. **Green** — Implémenter le minimum de code pour le faire passer.
+3. **Refactor** — Améliorer sans changer le comportement.
+
+Toute nouvelle fonctionnalité commence par ses tests.
+
+---
+
+## Migrations de base de données
+
+Les évolutions du schéma sont gérées via des scripts SQL versionnés dans `migrations/` et appliqués par `flask migrate` (idempotent).
+
+| Fichier | Date | Description |
+|---|---|---|
+| `migrations/001_series.sql` | 14/03/2026 | Ajout des colonnes `est_serie` et `saisons` sur la table `support` |
 
 ---
 

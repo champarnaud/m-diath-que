@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Médiathèque{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Médiathèque{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
-  <header>
-    <nav>
-      <a href="{{ url_for('index') }}" class="nav-brand">Médiathèque</a>
-      <div class="nav-links">
-        <a href="{{ url_for('supports.liste') }}">Tous les supports</a>
-        <a href="{{ url_for('supports.liste') }}?type=audio">Audio</a>
-        <a href="{{ url_for('supports.liste') }}?type=video">Vidéo</a>
-        <a href="{{ url_for('personnes.liste') }}">Personnes</a>
-        <a href="{{ url_for('supports.nouveau') }}">+ Ajouter</a>
-      </div>
-      <form class="nav-search" action="{{ url_for('recherche.rechercher') }}" method="get">
-        <input type="search" name="q" placeholder="Rechercher…" value="{{ request.args.get('q', '') }}">
-        <button type="submit">🔍</button>
-      </form>
-    </nav>
-  </header>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+    <header>
+        <nav aria-label="Navigation principale">
+            <a href="{{ url_for('index') }}" class="nav-brand">Médiathèque</a>
+            <div class="nav-links">
+                <a href="{{ url_for('supports.liste') }}">Tous les supports</a>
+                <a href="{{ url_for('supports.liste') }}?type=audio">Audio</a>
+                <a href="{{ url_for('supports.liste') }}?type=video">Vidéo</a>
+                <a href="{{ url_for('personnes.liste') }}">Personnes</a>
+                <a href="{{ url_for('supports.nouveau') }}">+ Ajouter</a>
+            </div>
+            <form class="nav-search" role="search" aria-label="Rechercher dans la médiathèque" action="{{ url_for('recherche.rechercher') }}" method="get">
+                <input type="search" name="q" placeholder="Rechercher…" aria-label="Terme de recherche" value="{{ request.args.get('q', '') }}">
+                <button type="submit" aria-label="Lancer la recherche">🔍</button>
+            </form>
+        </nav>
+    </header>
 
-  <main>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
+    <main id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %} {% for category, message in messages %}
         <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
+        {% endfor %} {% endwith %} {% block content %}{% endblock %}
+    </main>
 
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer>
-    <p>Médiathèque — Application personnelle de gestion de supports audiovisuels</p>
-  </footer>
+    <footer>
+        <p>Médiathèque — Application personnelle de gestion de supports audiovisuels</p>
+    </footer>
 </body>
+
 </html>

@@ -90,9 +90,86 @@ def migrate_command() -> None:
         click.echo("  ✓ Colonne 'saisons' déjà présente.")
 
     if ajouts:
-        click.echo(f"Migration terminée : {ajouts} colonne(s) ajoutée(s).")
+        click.echo(f"Migration 001 terminée : {ajouts} colonne(s) ajoutée(s).")
     else:
-        click.echo("Base de données déjà à jour.")
+        click.echo("Migration 001 : déjà à jour.")
+
+    # --- Migration 002 : colonnes created_at / updated_at ---
+    colonnes_personne = [
+        row[1]
+        for row in db.execute("PRAGMA table_info(personne)").fetchall()
+    ]
+    colonnes_activite = [
+        row[1]
+        for row in db.execute("PRAGMA table_info(activite)").fetchall()
+    ]
+    ajouts2 = 0
+
+    if "created_at" not in colonnes_personne:
+        db.execute(
+            "ALTER TABLE personne ADD COLUMN created_at TEXT DEFAULT NULL"
+        )
+        db.commit()
+        click.echo("  + Colonne 'personne.created_at' ajoutée.")
+        ajouts2 += 1
+    else:
+        click.echo("  ✓ Colonne 'personne.created_at' déjà présente.")
+
+    if "updated_at" not in colonnes_personne:
+        db.execute(
+            "ALTER TABLE personne ADD COLUMN updated_at TEXT DEFAULT NULL"
+        )
+        db.commit()
+        click.echo("  + Colonne 'personne.updated_at' ajoutée.")
+        ajouts2 += 1
+    else:
+        click.echo("  ✓ Colonne 'personne.updated_at' déjà présente.")
+
+    if "created_at" not in colonnes_activite:
+        db.execute(
+            "ALTER TABLE activite ADD COLUMN created_at TEXT DEFAULT NULL"
+        )
+        db.commit()
+        click.echo("  + Colonne 'activite.created_at' ajoutée.")
+        ajouts2 += 1
+    else:
+        click.echo("  ✓ Colonne 'activite.created_at' déjà présente.")
+
+    if "updated_at" not in colonnes_support:
+        db.execute(
+            "ALTER TABLE support ADD COLUMN updated_at TEXT DEFAULT NULL"
+        )
+        db.commit()
+        click.echo("  + Colonne 'support.updated_at' ajoutée.")
+        ajouts2 += 1
+    else:
+        click.echo("  ✓ Colonne 'support.updated_at' déjà présente.")
+
+    # Triggers updated_at (idempotents via CREATE TRIGGER IF NOT EXISTS)
+    db.execute(
+        """
+        CREATE TRIGGER IF NOT EXISTS support_updated_at
+        AFTER UPDATE ON support FOR EACH ROW
+        BEGIN
+            UPDATE support SET updated_at = datetime('now') WHERE id = OLD.id;
+        END
+        """
+    )
+    db.execute(
+        """
+        CREATE TRIGGER IF NOT EXISTS personne_updated_at
+        AFTER UPDATE ON personne FOR EACH ROW
+        BEGIN
+            UPDATE personne SET updated_at = datetime('now') WHERE id = OLD.id;
+        END
+        """
+    )
+    db.commit()
+
+    if ajouts2:
+        click.echo(f"Migration 002 terminée : {ajouts2} colonne(s) ajoutée(s).")
+    else:
+        click.echo("Migration 002 : déjà à jour.")
 
 
 def init_app(app: Flask) -> None:

@@ -30,9 +30,7 @@ bp = Blueprint("personnes", __name__, url_prefix="/personnes")
 def liste() -> str:
     """Affiche la liste de toutes les personnes."""
     db = get_db()
-    personnes = Personne.lister_toutes(db)
-    for p in personnes:
-        p.charger_activites(db)
+    personnes = Personne.lister_avec_activites(db)
     return render_template("personnes/liste.html", personnes=personnes)
 
 
@@ -169,6 +167,16 @@ def supprimer_activite(activite_id: int) -> Response:
     db = get_db()
     if Activite.trouver_par_id(db, activite_id) is None:
         abort(404)
+    nb_personnes = db.execute(
+        "SELECT COUNT(*) FROM personne_activite WHERE activite_id = ?",
+        (activite_id,),
+    ).fetchone()[0]
+    if nb_personnes > 0:
+        flash(
+            f"Attention : cette activité est utilisée par {nb_personnes} "
+            f"personne(s). Elle a été supprimée et retirée de ces personnes.",
+            "warning",
+        )
     Activite.supprimer(db, activite_id)
     flash("Activité supprimée.", "info")
     return redirect(url_for("personnes.liste_activites"))

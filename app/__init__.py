@@ -39,6 +39,22 @@ def create_app(config_overrides: Optional[Dict[str, Any]] = None) -> Flask:
     if config_overrides:
         app.config.update(config_overrides)
 
+    # Vérification de la clé secrète en production uniquement
+    # (FLASK_ENV=production). En développement ou via CLI, la clé par défaut
+    # de config.py est utilisée avec un avertissement.
+    if os.environ.get("FLASK_ENV") == "production" and not os.environ.get("SECRET_KEY"):
+        raise RuntimeError(
+            "La variable d'environnement SECRET_KEY doit être définie "
+            "avant de lancer l'application en production."
+        )
+    if not app.config.get("TESTING") and not os.environ.get("SECRET_KEY"):
+        import warnings
+        warnings.warn(
+            "SECRET_KEY non définie : la clé par défaut est utilisée. "
+            "Définissez SECRET_KEY en production.",
+            stacklevel=2,
+        )
+
     # Création des dossiers nécessaires
     os.makedirs(app.instance_path, exist_ok=True)
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)

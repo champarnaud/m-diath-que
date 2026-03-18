@@ -10,6 +10,26 @@
     padding: 0;
 }
 
+
+/* Skip link d'accessibilité */
+
+.skip-link {
+    position: absolute;
+    top: -3rem;
+    left: 1rem;
+    background: var(--couleur-primaire);
+    color: white;
+    padding: .5rem 1rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    z-index: 9999;
+    transition: top .15s;
+}
+
+.skip-link:focus {
+    top: 1rem;
+}
+
 :root {
     --couleur-primaire: #2563eb;
     --couleur-secondaire: #64748b;
@@ -126,6 +146,11 @@ footer {
 .alert-info {
     background: #e0f2fe;
     color: #075985;
+}
+
+.alert-warning {
+    background: #fef9c3;
+    color: #854d0e;
 }
 
 

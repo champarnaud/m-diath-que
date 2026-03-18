@@ -26,9 +26,11 @@ class Pret:
         date_retour: Optional[str] = None,
         id: Optional[int] = None,  # noqa: A002
     ) -> None:
+        if not emprunteur or not emprunteur.strip():
+            raise ValueError("Le champ 'emprunteur' est obligatoire.")
         self.id = id
         self.support_id = support_id
-        self.emprunteur = emprunteur
+        self.emprunteur = emprunteur.strip()
         self.date_pret = date_pret
         self.date_retour = date_retour
 

@@ -19,8 +19,16 @@ CREATE TABLE support (
     pochette     TEXT,
     est_serie    INTEGER NOT NULL DEFAULT 0,
     saisons      TEXT,
-    created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TRIGGER support_updated_at
+AFTER UPDATE ON support
+FOR EACH ROW
+BEGIN
+    UPDATE support SET updated_at = datetime('now') WHERE id = OLD.id;
+END;
 
 CREATE TABLE pret (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,8 +40,9 @@ CREATE TABLE pret (
 
 -- Activités exercées par une personne (réalisateur, acteur, chanteur…)
 CREATE TABLE activite (
-    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    libelle TEXT    NOT NULL UNIQUE
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    libelle    TEXT    NOT NULL UNIQUE,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Personnes physiques (artistes, réalisateurs, acteurs…)
@@ -41,8 +50,17 @@ CREATE TABLE personne (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     nom            TEXT    NOT NULL,
     date_naissance TEXT,
-    date_deces     TEXT
+    date_deces     TEXT,
+    created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TRIGGER personne_updated_at
+AFTER UPDATE ON personne
+FOR EACH ROW
+BEGIN
+    UPDATE personne SET updated_at = datetime('now') WHERE id = OLD.id;
+END;
 
 -- Association many-to-many personne ↔ activité
 CREATE TABLE personne_activite (
