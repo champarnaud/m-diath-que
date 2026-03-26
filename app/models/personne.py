@@ -355,6 +355,12 @@ class Personne:
         return [cls._depuis_row(r) for r in rows]
 
     @classmethod
+    def compter_toutes(cls, db: sqlite3.Connection) -> int:
+        """Retourne le nombre total de personnes en base."""
+        row = db.execute("SELECT COUNT(*) FROM personne").fetchone()
+        return row[0] if row else 0
+
+    @classmethod
     def lister_avec_activites(cls, db: sqlite3.Connection) -> List["Personne"]:
         """
         Retourne toutes les personnes avec leurs activités pré-chargées.
@@ -371,6 +377,42 @@ class Personne:
         personnes = cls.lister_toutes(db)
         if not personnes:
             return personnes
+        return cls._charger_activites_batch(db, personnes)
+
+    @classmethod
+    def lister_avec_activites_page(
+        cls,
+        db: sqlite3.Connection,
+        limite: int,
+        offset: int,
+    ) -> List["Personne"]:
+        """
+        Retourne une page de personnes avec leurs activités pré-chargées.
+
+        Args:
+            db:     Connexion SQLite active.
+            limite: Nombre maximum de personnes à retourner.
+            offset: Décalage depuis le début de la liste.
+
+        Returns:
+            List[Personne]: Personnes de la page avec self.activites renseigné.
+        """
+        rows = db.execute(
+            "SELECT * FROM personne ORDER BY nom COLLATE NOCASE LIMIT ? OFFSET ?",
+            (limite, offset),
+        ).fetchall()
+        personnes = [cls._depuis_row(r) for r in rows]
+        if not personnes:
+            return personnes
+        return cls._charger_activites_batch(db, personnes)
+
+    @classmethod
+    def _charger_activites_batch(
+        cls,
+        db: sqlite3.Connection,
+        personnes: List["Personne"],
+    ) -> List["Personne"]:
+        """Charge les activités pour une liste de personnes (évite N+1)."""
         ids = [p.id for p in personnes]
         placeholders = ",".join("?" * len(ids))
         act_rows = db.execute(

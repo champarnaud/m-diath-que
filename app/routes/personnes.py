@@ -20,6 +20,8 @@ from app.models.personne import Activite, Personne
 
 bp = Blueprint("personnes", __name__, url_prefix="/personnes")
 
+PAR_PAGE_VALIDES = (10, 50, 100)
+
 
 # ===========================================================================
 # Personnes
@@ -28,10 +30,35 @@ bp = Blueprint("personnes", __name__, url_prefix="/personnes")
 
 @bp.route("/")
 def liste() -> str:
-    """Affiche la liste de toutes les personnes."""
+    """Affiche la liste de toutes les personnes, avec pagination."""
     db = get_db()
-    personnes = Personne.lister_avec_activites(db)
-    return render_template("personnes/liste.html", personnes=personnes)
+
+    try:
+        par_page = int(request.args.get("par_page", 10))
+    except ValueError:
+        par_page = 10
+    if par_page not in PAR_PAGE_VALIDES:
+        par_page = 10
+
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except ValueError:
+        page = 1
+
+    total = Personne.compter_toutes(db)
+    nb_pages = max(1, (total + par_page - 1) // par_page)
+    page = min(page, nb_pages)
+    offset = (page - 1) * par_page
+
+    personnes = Personne.lister_avec_activites_page(db, limite=par_page, offset=offset)
+    return render_template(
+        "personnes/liste.html",
+        personnes=personnes,
+        par_page=par_page,
+        page=page,
+        nb_pages=nb_pages,
+        total=total,
+    )
 
 
 @bp.route("/<int:personne_id>")
