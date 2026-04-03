@@ -269,3 +269,47 @@ class TestSupportSerieRoutes:
         )
         assert response.status_code == 200
         assert "Saison" not in response.data.decode("utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Autocomplete titre
+# ---------------------------------------------------------------------------
+
+
+class TestAutocompleteSupport:
+    """Tests de la route d'autocomplétion des titres de supports."""
+
+    def test_autocomplete_json_retourne_resultats(self, client, app):
+        """La route retourne un JSON avec les titres correspondants."""
+        from app.models.db import get_db
+        from app.models.support import Support
+
+        db = get_db()
+        Support(
+            titre="La demande en mariage",
+            type_support="video",
+            support="DVD",
+        ).sauvegarder(db)
+
+        response = client.get("/supports/autocomplete?q=dema")
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "resultats" in data
+        assert any(
+            r["titre"] == "La demande en mariage" for r in data["resultats"]
+        )
+
+    def test_autocomplete_json_sans_terme_retourne_vide(self, client):
+        """La route retourne une liste vide si aucun terme n'est fourni."""
+        response = client.get("/supports/autocomplete")
+
+        assert response.status_code == 200
+        assert response.get_json() == {"resultats": []}
+
+    def test_autocomplete_json_moins_4_chars_retourne_vide(self, client):
+        """La route retourne une liste vide si le terme a moins de 4 caractères."""
+        response = client.get("/supports/autocomplete?q=dem")
+
+        assert response.status_code == 200
+        assert response.get_json() == {"resultats": []}

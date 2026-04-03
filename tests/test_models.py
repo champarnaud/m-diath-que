@@ -228,6 +228,104 @@ class TestSupportModification:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Support : autocomplete
+# ---------------------------------------------------------------------------
+
+
+class TestSupportAutocomplete:
+    """Tests de l'autocomplétion du titre lors de la création d'un support."""
+
+    def test_autocomplete_retourne_resultats_correspondants(self, db):
+        """L'autocomplétion retourne les supports dont le titre contient le terme."""
+        from app.models.support import Support
+
+        Support(
+            titre="La demande en mariage",
+            type_support="video",
+            support="DVD",
+        ).sauvegarder(db)
+        Support(
+            titre="La voiture démarrera au feu",
+            type_support="video",
+            support="DVD",
+        ).sauvegarder(db)
+        Support(
+            titre="Tout autre chose",
+            type_support="audio",
+            support="CD",
+        ).sauvegarder(db)
+
+        resultats = Support.autocomplete(db, "dema")
+        titres = [r["titre"] for r in resultats]
+
+        assert len(resultats) == 2
+        assert "La demande en mariage" in titres
+        assert "La voiture démarrera au feu" in titres
+
+    def test_autocomplete_insensible_casse(self, db):
+        """L'autocomplétion est insensible à la casse."""
+        from app.models.support import Support
+
+        Support(
+            titre="une Demande urgente",
+            type_support="video",
+            support="DVD",
+        ).sauvegarder(db)
+
+        resultats = Support.autocomplete(db, "DEMA")
+
+        assert len(resultats) == 1
+        assert resultats[0]["titre"] == "une Demande urgente"
+
+    def test_autocomplete_insensible_accents(self, db):
+        """L'autocomplétion est insensible aux accents ("dema" trouve "démarre")."""
+        from app.models.support import Support
+
+        Support(
+            titre="La voiture démarre vite",
+            type_support="video",
+            support="DVD",
+        ).sauvegarder(db)
+
+        resultats = Support.autocomplete(db, "dema")
+
+        assert len(resultats) == 1
+        assert resultats[0]["titre"] == "La voiture démarre vite"
+
+    def test_autocomplete_moins_4_chars_retourne_vide(self, db):
+        """L'autocomplétion retourne [] si le terme fait moins de 4 caractères."""
+        from app.models.support import Support
+
+        Support(
+            titre="ABC dema test", type_support="audio", support="CD"
+        ).sauvegarder(db)
+
+        assert Support.autocomplete(db, "dem") == []
+        assert Support.autocomplete(db, "") == []
+        assert Support.autocomplete(db, "   ") == []
+
+    def test_autocomplete_limite_5_resultats(self, db):
+        """L'autocomplétion retourne au maximum 5 résultats."""
+        from app.models.support import Support
+
+        for i in range(6):
+            Support(
+                titre=f"Film dematest {i}",
+                type_support="video",
+                support="DVD",
+            ).sauvegarder(db)
+
+        resultats = Support.autocomplete(db, "dema")
+
+        assert len(resultats) == 5
+
+
+# ---------------------------------------------------------------------------
+# Activite
+# ---------------------------------------------------------------------------
+
+
 class TestActivite:
     """Tests du modèle Activite."""
 

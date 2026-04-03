@@ -10,6 +10,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -45,6 +46,27 @@ def _extension_autorisee(nom_fichier: str) -> bool:
 
 
 PAR_PAGE_VALIDES = (10, 50, 100)
+
+
+@bp.route("/autocomplete")
+def autocomplete():
+    """Retourne jusqu'à 5 titres de supports contenant le terme fourni.
+
+    Le terme doit avoir au minimum 4 caractères consécutifs. La recherche
+    est insensible à la casse et aux accents.
+
+    Query params:
+        q (str): Terme de recherche (vide ou absent → liste vide).
+
+    Returns:
+        JSON: {"resultats": [{"id": int, "titre": str}, ...]}
+    """
+    terme = request.args.get("q", "").strip()
+    db = get_db()
+    resultats = Support.autocomplete(db, terme)
+    response = jsonify({"resultats": resultats})
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @bp.route("/")

@@ -7,8 +7,13 @@
         <legend>Informations générales</legend>
 
         <div class="form-group">
-            <label for="titre">Titre <span class="requis">*</span></label>
-            <input type="text" id="titre" name="titre" required value="{{ support.titre if support else '' }}">
+            <label for="titre">Titre <span class="requis">*</span></label> {% if not support %}
+            <div class="autocomplete-conteneur">
+                <input type="text" id="titre" name="titre" required value="" autocomplete="off" aria-autocomplete="list" aria-controls="titre-suggestions" aria-expanded="false">
+                <ul id="titre-suggestions" role="listbox" aria-label="Titres similaires déjà présents" class="autocomplete-liste" hidden></ul>
+            </div>
+            {% else %}
+            <input type="text" id="titre" name="titre" required value="{{ support.titre }}"> {% endif %}
         </div>
 
         <div class="form-group">
@@ -175,5 +180,138 @@
     select.addEventListener('change', majChamps);
     majChamps();
     majSaisons();
+
+    { %
+        if not support %
+    }
+    // ---------------------------------------------------------------
+    // Autocomplete titre (création uniquement)
+    // ---------------------------------------------------------------
+    (function() {
+        const inputTitre = document.getElementById('titre');
+        const liste = document.getElementById('titre-suggestions');
+        let timerDebounce = null;
+
+        function fermer() {
+            liste.hidden = true;
+            liste.innerHTML = '';
+            inputTitre.setAttribute('aria-expanded', 'false');
+        }
+
+        function selectionner(titre) {
+            inputTitre.value = titre;
+            fermer();
+            inputTitre.focus();
+        }
+
+        function rendreListe(resultats) {
+            liste.innerHTML = '';
+            if (!resultats.length) {
+                fermer();
+                return;
+            }
+            resultats.forEach(function(item) {
+                const li = document.createElement('li');
+                li.setAttribute('role', 'option');
+                li.setAttribute('tabindex', '-1');
+                li.textContent = item.titre;
+                li.addEventListener('mousedown', function(e) {
+                    // mousedown avant blur : empêche la fermeture prématurée
+                    e.preventDefault();
+                    selectionner(item.titre);
+                });
+                liste.appendChild(li);
+            });
+            liste.hidden = false;
+            inputTitre.setAttribute('aria-expanded', 'true');
+        }
+
+        function rechercherTitres(terme) {
+            fetch(
+                    '/supports/autocomplete?q=' + encodeURIComponent(terme), {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    }
+                )
+                .then(function(r) {
+                    return r.json();
+                })
+                .then(function(data) {
+                    rendreListe(data.resultats || []);
+                })
+                .catch(function() {
+                    fermer();
+                });
+        }
+
+        inputTitre.addEventListener('input', function() {
+            clearTimeout(timerDebounce);
+            const terme = inputTitre.value;
+            if (terme.length < 4) {
+                fermer();
+                return;
+            }
+            timerDebounce = setTimeout(function() {
+                rechercherTitres(terme);
+            }, 300);
+        });
+
+        // Navigation clavier dans la liste
+        inputTitre.addEventListener('keydown', function(e) {
+            if (liste.hidden) return;
+            const items = liste.querySelectorAll('li');
+            const actif = liste.querySelector('li[aria-selected="true"]');
+            let idx = Array.from(items).indexOf(actif);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (actif) actif.removeAttribute('aria-selected');
+                idx = (idx + 1) % items.length;
+                items[idx].setAttribute('aria-selected', 'true');
+                items[idx].focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (actif) actif.removeAttribute('aria-selected');
+                idx = (idx - 1 + items.length) % items.length;
+                items[idx].setAttribute('aria-selected', 'true');
+                items[idx].focus();
+            } else if (e.key === 'Escape') {
+                fermer();
+            }
+        });
+
+        // Navigation clavier depuis un élément de la liste
+        liste.addEventListener('keydown', function(e) {
+            const items = liste.querySelectorAll('li');
+            const actif = document.activeElement;
+            let idx = Array.from(items).indexOf(actif);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                idx = (idx + 1) % items.length;
+                items[idx].focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (idx <= 0) {
+                    inputTitre.focus();
+                } else {
+                    items[idx - 1].focus();
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                selectionner(actif.textContent);
+            } else if (e.key === 'Escape') {
+                fermer();
+                inputTitre.focus();
+            }
+        });
+
+        // Fermeture au blur (délai pour laisser le clic se déclencher)
+        inputTitre.addEventListener('blur', function() {
+            setTimeout(fermer, 150);
+        });
+    }()); { % endif %
+    }
 </script>
 {% endblock %}

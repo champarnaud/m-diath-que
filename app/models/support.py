@@ -3,6 +3,7 @@ Modèle Support : représente un support audiovisuel de la médiathèque.
 """
 
 import sqlite3
+import unicodedata
 from typing import Dict, List, Optional
 
 
@@ -500,3 +501,68 @@ class Support:
         """
         db.execute("DELETE FROM support WHERE id = ?", (support_id,))
         db.commit()
+
+    @classmethod
+    def autocomplete(
+        cls,
+        db: sqlite3.Connection,
+        terme: str,
+        max_resultats: int = 5,
+    ) -> List[Dict]:
+        """
+        Retourne les titres de supports contenant le terme donné de façon
+        consécutive, insensible à la casse et aux accents.
+
+        Le filtrage s'effectue en Python après normalisation NFD + casefold
+        car SQLite LIKE ne gère pas les accents hors ASCII.
+
+        Args:
+            db:            Connexion SQLite active.
+            terme:         Séquence de caractères à rechercher (≥ 4 requis).
+            max_resultats: Nombre maximum de résultats retournés (défaut 5).
+
+        Returns:
+            List[Dict]: Liste de dicts ``{"id": int, "titre": str}`` triée
+            par titre, limitée à ``max_resultats`` entrées. Retourne ``[]``
+            si ``terme`` fait moins de 4 caractères après stripping.
+        """
+        if not terme or len(terme.strip()) < 4:
+            return []
+        terme_normalise = _normaliser(terme.strip())
+        rows = db.execute(
+            "SELECT id, titre FROM support ORDER BY titre COLLATE NOCASE"
+        ).fetchall()
+        resultats: List[Dict] = []
+        for row in rows:
+            if terme_normalise in _normaliser(row["titre"]):
+                resultats.append({"id": row["id"], "titre": row["titre"]})
+                if len(resultats) == max_resultats:
+                    break
+        return resultats
+
+
+# ---------------------------------------------------------------------------
+# Utilitaires — normalisation de chaîne
+# ---------------------------------------------------------------------------
+
+
+def _normaliser(texte: str) -> str:
+    """
+    Normalise une chaîne pour une comparaison insensible à la casse et
+    aux accents.
+
+    L'algorithme décompose les caractères accentués (NFD), applique
+    casefold() pour l'insensibilité à la casse, puis supprime les marques
+    diacritiques (catégorie Unicode Mn) afin que "démarrer" soit équivalent
+    à "demarrer".
+
+    Args:
+        texte: Chaîne à normaliser.
+
+    Returns:
+        str: Chaîne normalisée sans accents ni majuscules.
+    """
+    decompose = unicodedata.normalize("NFD", texte).casefold()
+    return "".join(
+        c for c in decompose if unicodedata.category(c) != "Mn"
+    )
