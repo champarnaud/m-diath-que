@@ -180,17 +180,15 @@
     select.addEventListener('change', majChamps);
     majChamps();
     majSaisons();
+</script>
 
-    { %
-        if not support %
-    }
-    // ---------------------------------------------------------------
-    // Autocomplete titre (création uniquement)
-    // ---------------------------------------------------------------
+{% if not support %}
+<script>
+    // Autocomplete titre (creation uniquement)
     (function() {
-        const inputTitre = document.getElementById('titre');
-        const liste = document.getElementById('titre-suggestions');
-        let timerDebounce = null;
+        var inputTitre = document.getElementById('titre');
+        var liste = document.getElementById('titre-suggestions');
+        var timerDebounce = null;
 
         function fermer() {
             liste.hidden = true;
@@ -211,12 +209,11 @@
                 return;
             }
             resultats.forEach(function(item) {
-                const li = document.createElement('li');
+                var li = document.createElement('li');
                 li.setAttribute('role', 'option');
                 li.setAttribute('tabindex', '-1');
                 li.textContent = item.titre;
                 li.addEventListener('mousedown', function(e) {
-                    // mousedown avant blur : empêche la fermeture prématurée
                     e.preventDefault();
                     selectionner(item.titre);
                 });
@@ -227,13 +224,11 @@
         }
 
         function rechercherTitres(terme) {
-            fetch(
-                    '/supports/autocomplete?q=' + encodeURIComponent(terme), {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+            fetch('/supports/autocomplete?q=' + encodeURIComponent(terme), {
+                    headers: {
+                        'Accept': 'application/json'
                     }
-                )
+                })
                 .then(function(r) {
                     return r.json();
                 })
@@ -247,7 +242,7 @@
 
         inputTitre.addEventListener('input', function() {
             clearTimeout(timerDebounce);
-            const terme = inputTitre.value;
+            var terme = inputTitre.value;
             if (terme.length < 4) {
                 fermer();
                 return;
@@ -257,13 +252,11 @@
             }, 300);
         });
 
-        // Navigation clavier dans la liste
         inputTitre.addEventListener('keydown', function(e) {
             if (liste.hidden) return;
-            const items = liste.querySelectorAll('li');
-            const actif = liste.querySelector('li[aria-selected="true"]');
-            let idx = Array.from(items).indexOf(actif);
-
+            var items = liste.querySelectorAll('li');
+            var actif = liste.querySelector('li[aria-selected="true"]');
+            var idx = Array.from(items).indexOf(actif);
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 if (actif) actif.removeAttribute('aria-selected');
@@ -281,12 +274,10 @@
             }
         });
 
-        // Navigation clavier depuis un élément de la liste
         liste.addEventListener('keydown', function(e) {
-            const items = liste.querySelectorAll('li');
-            const actif = document.activeElement;
-            let idx = Array.from(items).indexOf(actif);
-
+            var items = liste.querySelectorAll('li');
+            var actif = document.activeElement;
+            var idx = Array.from(items).indexOf(actif);
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 idx = (idx + 1) % items.length;
@@ -307,10 +298,9 @@
             }
         });
 
-        // Fermeture au blur (délai pour laisser le clic se déclencher)
         inputTitre.addEventListener('blur', function() {
             setTimeout(fermer, 150);
         });
-    }()); { % endif % }
+    }());
 </script>
-{% endblock %}
+{% endif %} {% endblock %}
