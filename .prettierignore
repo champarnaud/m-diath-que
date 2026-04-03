@@ -1,0 +1,2 @@
+# Templates Jinja2 — le formateur Prettier casse les balises {% %} {{ }}
+app/templates/**/*.html
